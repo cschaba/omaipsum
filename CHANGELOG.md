@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A test suite: tests/generator.sh covers the counts, shapes and corpora,
+  tests/smoke.sh the manifest, the settings schema and the scripts.
+
 - scripts/release.sh cuts a release, and refuses to start unless the tree,
   the tag, the parsers, the changelog and the tests all agree.
 
