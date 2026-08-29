@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- scripts/release.sh cuts a release, and refuses to start unless the tree,
+  the tag, the parsers, the changelog and the tests all agree.
+
 - install.sh and uninstall.sh: symlink the checkout, register through
   omarchy's own commands, and print the optional keybinding rather than
   writing it.
