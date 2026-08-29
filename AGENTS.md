@@ -7,29 +7,35 @@ nothing more. The reasoning behind the code is in
 
 ## Where things stand
 
-**This repository is documentation only. There is no code yet.** `README.md`,
-this file, `DEVELOPMENT.md` and `CHANGELOG.md` are all of it, and the changelog
-sits at `0.0.0 — Initial setup`. Do not assume a file exists because a document
-names one; most of what is described below is the target, not something you can
-run today.
-
-What omaipsum is meant to be: an **Omarchy plugin** (Quickshell/QML, loaded by
-`omarchy-shell`) — a bar widget that generates funny lorem-ipsum text. The
-README fixes the product decisions. Three text variants in the first version,
-a UI modelled on [Tiny Ipsum](https://macmenubar.com/tiny-ipsum/), and a count
+omaipsum is an **Omarchy plugin** (Quickshell/QML, loaded by `omarchy-shell`)
+— a bar widget that generates funny lorem-ipsum text. Three text variants, a
+UI modelled on [Tiny Ipsum](https://macmenubar.com/tiny-ipsum/), and a count
 selector over words, sentences and paragraphs.
 
-The work is broken into thirteen issues across two milestones: `0.1.0 —
-generate and copy` gets a widget that produces text and copies it, `0.2.0 —
-shipping` adds install, tests, CI, a release script and a README worth reading.
+**The plugin is written and runs.** `BarWidget.qml` is the bar icon and its
+pulldown, `Ipsum.js` generates the text, `corpora/` holds the three variants as
+data, `install.sh` and `uninstall.sh` register it with Omarchy through
+Omarchy's own commands, `scripts/release.sh` cuts a release, `tests/` covers
+both halves and `.gitea/workflows/ci.yml` runs the checks on every push.
+[README.md](README.md) describes it for someone using it;
+[DEVELOPMENT.md](DEVELOPMENT.md) describes the code.
+
+The work was broken into thirteen issues across two milestones: `0.1.0 —
+generate and copy` got a widget that produces text and copies it, `0.2.0 —
+shipping` added install, tests, CI, a release script and a README worth
+reading. Nothing has been released yet: `manifest.json` still holds the `0.0.1`
+it was scaffolded with, and everything since sits under `[Unreleased]` in the
+changelog.
 
 ## Where it lives
 
 **Gitea is home.** `origin` is
 `ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, and every change, issue
-and pull request goes there first. A GitHub mirror follows once there is a
-first working version — that is also when a marketplace listing becomes
-relevant, since it needs a public repository.
+and pull request goes there first. That instance is private, so there is a
+second remote: `github`, at `git@github.com:cschaba/omaipsum.git`, public. It
+is the address `manifest.json` gives as the homepage and the one the README
+tells people to clone, and it is a mirror — pushed to, never worked in. Issues
+and pull requests do not move with it.
 
 CI therefore belongs in `.gitea/workflows`. omapass keeps its workflows under
 `.github/workflows`; those are a template for the *jobs*, not for the location.
@@ -42,19 +48,18 @@ command answers `not found`.
 
 `cschaba/omapass` — checked out at `~/Projects/omapass`, symlinked into
 `~/.config/omarchy/plugins/cschaba.omapass` — is the same author's finished
-Omarchy plugin, and it is where this file and `DEVELOPMENT.md` were copied
-from. It is the worked example for everything omaipsum still needs:
+Omarchy plugin, and it is where this file and `DEVELOPMENT.md` started their
+lives as copies. It is the worked example behind most of what is here:
 `manifest.json`, `install.sh` and `uninstall.sh`, `scripts/release.sh`,
 `tests/`, the CI jobs, and the bar-icon-with-a-pulldown shape in
-`BarWidget.qml`. Its `DEVELOPMENT.md` holds Quickshell traps that apply here
-unchanged.
+`BarWidget.qml`. Its `DEVELOPMENT.md`
+holds Quickshell traps that apply here unchanged; they are restated below.
 
-Copying from it is the point. Copying from it *without reading* is how the
-passages below came to describe a password manager: omaipsum handles no
-secrets and needs no `pass`, GPG or PAM, but parts of this file still say
-otherwise, and `DEVELOPMENT.md` still opens "Notes for working on omapass
-itself". Issue #13 tracks the cleanup; until it lands, prefer what the code
-does over what a leftover sentence claims.
+Copying from it is the point. Copying from it *without reading* is how these
+two files once came to describe a password manager: omaipsum handles no
+secrets and needs no `pass`, GPG or PAM. When something read across from
+omapass has no reason to exist on this side, take it out rather than leave it
+somewhere it will be believed.
 
 ## One branch per issue
 
@@ -129,15 +134,13 @@ requires it there, so a second copy anywhere else could only drift out of step.
 
 ## Commands
 
-Nothing here builds, runs or tests yet. What the issues are working towards,
-following omapass:
-
 ```bash
-./install.sh                                  # symlink the checkout into ~/.config/omarchy/plugins/
-omarchy restart shell                         # the only reliable reload after a QML edit
+./install.sh                                  # symlink the checkout in
+omarchy restart shell                         # the only reliable QML reload
 omarchy-shell cschaba.omaipsum.widget toggle  # open the bar pulldown
 journalctl --user -f | grep omarchy-shell     # where QML errors land
-tests/smoke.sh                                # the suite
+tests/smoke.sh                                # manifest, QML, the scripts
+tests/generator.sh                            # Ipsum.js, under node
 scripts/release.sh patch --dry-run            # what a release would do
 qmllint -I /usr/share/omarchy/shell *.qml     # type checking, locally
 ```
@@ -193,9 +196,11 @@ looks, and usually wrong.
 What is ours:
 
 - the plugin directory, `~/.config/omarchy/plugins/cschaba.omaipsum`
-- `~/.config/omaipsum/` — its config
-- `~/.local/state/omaipsum/` — its log, backups and first-run marker
-- the password store, and only through `pass`
+- `~/.config/omaipsum/` and `~/.local/state/omaipsum/`, if a later version ever
+  needs them. This one creates neither: the three settings live in `shell.json`
+  where `omarchy bar set` keeps them, and nothing is logged or cached.
+  `uninstall.sh --purge` removes both anyway, so a version that starts writing
+  there does not also have to remember to teach the uninstaller.
 
 Everything else belongs to the user, including `~/.config/hypr/bindings.lua` and
 `~/.config/omarchy/shell.json`. Being careful about editing them — announcing
@@ -220,29 +225,38 @@ Prefer them over touching `shell.json`, which they own.
 
 ## Publishing
 
-omaipsum is listed on the [Omarchy plugin marketplace][mp]. The listing points at
-**the repository, not a release**, so a reviewer sees whatever is on `main` at
-the moment they look. That is the sharper reason for the branch rule above:
-`main` is the public face, not a workspace.
+**omaipsum is not on the [Omarchy plugin marketplace][mp], and has not been
+submitted.** The public mirror was the prerequisite and it exists; the
+submission itself is still to do. Nothing in this repository claims a listing,
+and nothing should until one is made.
 
-[mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace/issues/3086
+[mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace
 
-### Promises already made
+A listing points at **the repository, not a release**, so a reviewer sees
+whatever is on `main` at the moment they look. That is the sharper reason for
+the branch rule above: `main` is the public face, not a workspace.
 
-The submission form has a checklist, and it was ticked. Each item is a claim
-about how omaipsum behaves, so a change that breaks one silently makes the
-listing untrue:
+### Promises a submission would make
+
+The submission form is a checklist, and every item on it is a claim about how
+the plugin behaves, made to people who cannot check it themselves. What
+omaipsum could tick today, and what keeps each one true afterwards:
 
 - **"Does not overwrite user configuration without explicit consent."**
   omaipsum goes further than the checklist asks: it writes nothing outside its
-  own directories at all. See *Stay inside the plugin* above. The easiest way to
-  keep this claim true is to keep having nothing to declare.
+  own directories at all. See *Stay inside the plugin* above. The easiest way
+  to keep this claim true is to keep having nothing to declare.
 - **"The repository is public and contains installation and removal
-  instructions."** `uninstall.sh` has to keep working, and keep leaving the
-  password store alone.
-- **"Documented the licence and any external dependencies."** A new runtime
-  dependency belongs in the README's Requirements table and in the startup
-  requirements check, not only in the code that calls it.
+  instructions."** True of the GitHub mirror, which is what a listing would
+  point at; the README documents both directions. `uninstall.sh` has to keep
+  working, and keep leaving `bindings.lua` alone.
+- **"Documented the licence and any external dependencies."** MIT, and
+  `wl-clipboard` is the only external dependency. A new one belongs in the
+  README's Requirements table and in the startup probe beside `wl-copy`, not
+  only in the code that calls it.
+
+Whoever submits it is making these claims on the project's behalf, so check
+them against the code on the day rather than against this list.
 
 ### What the static scan reads
 
@@ -254,15 +268,33 @@ the root README.
 **Excluded:** anything under `tests/`, `docs/`, `.github/`, `spec/`, `specs/`,
 `fixtures/`, `coverage/`, `node_modules/`.
 
-So `bin/*`, `lib/config.sh`, `install.sh`, `uninstall.sh` and all the QML are
-read; `tests/` and `docs/` are not. Worth knowing before adding anything that
-shells out, invokes a package manager, or asks for `sudo`.
+In this repository that means `install.sh`, `uninstall.sh`,
+`scripts/release.sh`, `Ipsum.js`, `BarWidget.qml`, `.gitea/workflows/ci.yml`
+and `README.md` are read; `tests/` is not, and neither are the corpora, which
+are `.json`. There is no `bin/` and no `lib/` here. Worth knowing before
+adding anything that shells out, invokes a package manager, or asks for
+`sudo`.
+
+Note that the exclusion list names `.github/` and not `.gitea/`, and omaipsum's
+workflow lives in the latter — so the CI file is read like any other source
+file, and what it does counts.
 
 ### Capabilities it will flag
 
-These are detected and reported to the reviewer, and all of them are ours
-already: `privilege` and `package-manager` (the guided setup offers to
-`pacman -S` the dependencies), `installer` (the three scripts), and
-`remote-build` (the `git clone` in the README). They are expected. A **new**
-one appearing in a diff means the plugin started doing something categorically
-different, and deserves a second look before it ships.
+These are detected and reported to the reviewer. Of omaipsum:
+
+- `installer` — `install.sh`, `uninstall.sh` and `scripts/release.sh`.
+- `remote-build` — the `git clone` and the `omarchy plugin add <url>` in the
+  README.
+- `privilege` and `package-manager` — **not from the plugin.** Nothing in it
+  runs `sudo` or a package manager. `install.sh` prints
+  `omarchy pkg add wl-clipboard` when `wl-copy` is missing and installs
+  nothing; the widget execs exactly two binaries, `wl-copy` and
+  `omarchy-notification-send`. What does install packages is
+  `.gitea/workflows/ci.yml`, which sets up a runner with `sudo apt-get
+  install` — and by the rules above it is read, so a scan may well report both
+  from there. If it does, that is where they come from, and it is a CI file
+  rather than anything a user installs.
+
+A **new** capability appearing in a diff means the plugin started doing
+something categorically different, and deserves a second look before it ships.
