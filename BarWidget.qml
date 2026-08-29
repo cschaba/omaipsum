@@ -15,8 +15,8 @@ import "Ipsum.js" as Ipsum
 // the bar rather than a widget and a full-screen overlay.
 //
 // Everything the panel needs is here: pick a variant, pick a unit, set a
-// count, read exactly the text that will be copied, roll a different sample.
-// The clipboard is the one thing deliberately missing — see copyCurrent().
+// count, read exactly the text that will be copied, roll a different sample,
+// and copy it — at which point the panel closes and a toast says what landed.
 Panel {
   id: root
   moduleName: "cschaba.omaipsum"
@@ -237,13 +237,143 @@ Panel {
 
   readonly property int previewWords: Ipsum.countWords(root.previewText)
 
-  // The copy seam. #6 attaches the clipboard here and nowhere else: the text
-  // is root.previewText, the Copy button and the ⏎ hint already call this,
-  // and the panel is still open, so #6 also owns whether copying closes it.
+  // --- clipboard ------------------------------------------------------------
+  //
+  // wl-clipboard is a runtime dependency of this widget: without wl-copy the
+  // panel can generate text all day and never hand any of it over. Both
+  // processes hang off root rather than off the panel content, because copying
+  // closes the panel — a Process living inside it would be racing the surface
+  // it was started from.
+
+  // "checking" until the startup probe answers, so the first frames do not
+  // accuse the user of a missing package. Only ever leaves that state here and
+  // in copyProc's failure path.
+  property string clipboardCheck: "checking"
+
+  readonly property bool clipboardMissing: root.clipboardCheck === "missing"
+
+  // The startup requirements check. `wl-copy --version` prints and exits
+  // without opening the display or claiming a selection, so this costs one
+  // exec and cannot clobber what the user already had on the clipboard.
+  Process {
+    id: clipboardProbe
+    command: ["wl-copy", "--version"]
+    running: true
+
+    onExited: function (exitCode) {
+      root.clipboardCheck = exitCode === 0 ? "present" : "missing"
+    }
+
+    // Quickshell emits neither started nor exited for a binary that is not on
+    // PATH — running simply falls back to false and a warning goes to the
+    // journal — so a missing wl-copy is the *absence* of an exit, and the only
+    // way to read it is to start out pessimistic and be talked out of it.
+    onRunningChanged: {
+      if (!clipboardProbe.running && root.clipboardCheck === "checking")
+        root.clipboardCheck = "missing"
+    }
+  }
+
+  Process {
+    id: copyProc
+
+    // Held from the request until the child is up. Non-empty also means a copy
+    // is in flight, which is what tells onRunningChanged below that a run
+    // ended without ever reaching onStarted.
+    property string pendingText: ""
+    // Captured with the text: the panel is gone by the time the toast is sent,
+    // and reopening it re-rolls the seed, so neither can be read back then.
+    property string headline: ""
+    property string detail: ""
+
+    // Piped, never argv. The text is arbitrary and runs to thousands of words,
+    // which is both past what ARG_MAX promises and a place where the blank
+    // lines between paragraphs stop surviving intact.
+    command: ["wl-copy", "--type", "text/plain"]
+    stdinEnabled: true
+
+    // The pipe does not exist before the child is up. Closing stdin afterwards
+    // is the EOF that makes wl-copy stop reading and fork — left open, it waits
+    // there forever and nothing reaches the clipboard.
+    onStarted: {
+      copyProc.write(copyProc.pendingText)
+      copyProc.pendingText = ""
+      copyProc.stdinEnabled = false
+      // Closing here rather than in copyCurrent(): the pulldown disappearing is
+      // the first acknowledgement the user gets, so it has to mean the child is
+      // actually up and holding the text. The Process is a child of root, not
+      // of the panel, so nothing is torn down underneath this write.
+      root.close()
+    }
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        root.notify(copyProc.headline, copyProc.detail, "low")
+        return
+      }
+      // The panel closed on start, so there is no longer anywhere on screen to
+      // put this. Silence would be the worst outcome the widget has — the user
+      // pastes whatever was on the clipboard before and finds out much later —
+      // so a failure that got this far goes out as a critical toast.
+      root.notify("Nothing was copied", "wl-copy exited with " + exitCode, "critical")
+    }
+
+    onRunningChanged: {
+      if (copyProc.running || !copyProc.pendingText)
+        return
+      // Never started: wl-copy is not installed. The panel is still open,
+      // because the close lives in onStarted, so the message can go where the
+      // user is already looking rather than into a toast behind their back.
+      copyProc.pendingText = ""
+      root.clipboardCheck = "missing"
+    }
+  }
+
+  Process {
+    id: notifyProc
+  }
+
+  // A Process rather than Util.execArgv: detaching is not needed here, and
+  // execArgv would put a bash between the widget and the only two binaries it
+  // is meant to run.
+  function notify(headline, detail, urgency) {
+    var args = ["omarchy-notification-send", "--app-name", "omaipsum", "-g", "󰈙", "-u", urgency, headline]
+    // The description is optional and the parser reads the next positional as
+    // one, so an empty string would show as a blank second line.
+    if (detail)
+      args.push(detail)
+    notifyProc.command = args
+    notifyProc.running = true
+  }
+
+  // "3 paragraphs of Bacon copied" — the amount and the variant are exactly
+  // what the user can no longer check once the panel has closed.
+  function copySummary() {
+    var noun = root.count === 1 ? root.unit.replace(/s$/, "") : root.unit
+    var name = root.currentCorpus ? String(root.currentCorpus.name) : "lorem ipsum"
+    return root.count + " " + noun + " of " + name + " copied"
+  }
+
+  // The one place the clipboard is touched: the Copy button and the ⏎ hint both
+  // land here. Closing on copy is the Tiny Ipsum behaviour and the default —
+  // see onStarted for why it happens there and not on this line.
   function copyCurrent() {
     if (!root.previewText)
       return
-    // #6 attaches here
+    // A second ⏎ arriving before the first handover would swap the text out
+    // from under onStarted.
+    if (copyProc.pendingText)
+      return
+
+    copyProc.pendingText = root.previewText
+    copyProc.headline = root.copySummary()
+    // Redundant for the words unit, where the headline already carries the
+    // number; useful for the other two, where nobody can count a paragraph.
+    copyProc.detail = root.unit === "words" ? "" : root.previewWords + (root.previewWords === 1 ? " word" : " words")
+    // onStarted turns this off after writing and it stays off, so every run has
+    // to arm it again or the second copy gets no pipe at all.
+    copyProc.stdinEnabled = true
+    copyProc.running = true
   }
 
   // --- keyboard cursor ------------------------------------------------------
@@ -655,6 +785,21 @@ Panel {
             width: parent.width
             visible: root.hasCorpora
             foreground: root.foreground
+          }
+
+          // The runtime dependency, said out loud next to the button that needs
+          // it — set by the startup probe, and again by a copy that never
+          // started. Copy stays enabled underneath: this is a stale answer the
+          // moment the user installs the package, and the copy path re-tests it
+          // anyway.
+          Text {
+            width: parent.width
+            visible: root.hasCorpora && root.clipboardMissing
+            text: "wl-copy not found — install wl-clipboard to copy"
+            color: Color.urgent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WordWrap
           }
 
           // --- actions ------------------------------------------------------
