@@ -6,6 +6,10 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A README for people who want to use omaipsum rather than work on it.
+- manifest.json's homepage points at the public GitHub mirror, not the
+  private Gitea instance.
+
 - A test suite: tests/generator.sh covers the counts, shapes and corpora,
   tests/smoke.sh the manifest, the settings schema and the scripts.
 
