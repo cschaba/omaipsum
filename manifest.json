@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "cschaba.omaipsum",
+  "name": "omaipsum",
+  "version": "0.0.1",
+  "author": "Carsten",
+  "license": "MIT",
+  "description": "Generate lorem ipsum — classic, or considerably less classic — from the bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Lorem Ipsum",
+    "description": "Generate words, sentences or paragraphs of placeholder text and copy them.",
+    "category": "Utilities",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {},
+    "schema": []
+  },
+  "homepage": "https://gitea.s10r.de/carsten/omaipsum"
+}
