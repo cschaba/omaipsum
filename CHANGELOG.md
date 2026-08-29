@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Default variant, unit and amount are configurable from the bar's own widget
+  settings; the pulldown opens in them.
+
 - Copying: the text goes to the clipboard through wl-copy, the pulldown
   closes, and a notification says what was copied.
 - The panel says so when wl-clipboard is not installed, rather than failing

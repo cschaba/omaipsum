@@ -114,12 +114,13 @@ Panel {
     })
     root.corpora = next
 
-    // Until the user picks for themselves the selection follows the list, so
-    // the default is the first variant alphabetically however the reads
-    // happened to finish. Without this it would be whichever file the disk
-    // returned first, which is not the same variant twice running.
+    // Until the user picks for themselves the selection follows the configured
+    // default, falling back to the first variant alphabetically. Corpora arrive
+    // one file at a time and in whatever order the reads finish, so without
+    // this the opening selection would be whichever file the disk returned
+    // first, which is not the same variant twice running.
     if (!root.variantChosen)
-      root.variantId = root.corpora[0].id
+      root.variantId = root.preferredVariantId()
   }
 
   function rejectCorpus(fileName) {
@@ -129,6 +130,45 @@ Panel {
     next.push(fileName)
     next.sort()
     root.failedFiles = next
+  }
+
+  // --- configured defaults --------------------------------------------------
+
+  // manifest.json's barWidget.defaults are metadata for the settings UI and
+  // nothing else: the bar builds a widget's `settings` from its shell.json
+  // entry minus the id (plugins/bar/BarModel.js entrySettings) and merges no
+  // defaults into it. So the fallbacks below are the values that actually
+  // apply, and the manifest's copies of them have to be kept in step by hand.
+  readonly property string defaultVariant: String(root.setting("variant", "classic"))
+  readonly property string defaultUnit: String(root.setting("unit", "paragraphs"))
+  readonly property int defaultCount: Math.round(Number(root.setting("count", 3)))
+
+  function hasCorpus(id) {
+    for (var i = 0; i < root.corpora.length; i++)
+      if (root.corpora[i].id === id)
+        return true
+    return false
+  }
+
+  // A variant id comes out of shell.json, where it can name a corpus that has
+  // since been renamed or deleted — it is a request, not an instruction. An
+  // unknown id falls through to the first variant rather than leaving the
+  // picker showing nothing at all.
+  function preferredVariantId() {
+    if (root.hasCorpus(root.defaultVariant))
+      return root.defaultVariant
+    return root.corpora.length > 0 ? root.corpora[0].id : ""
+  }
+
+  // These are what the pulldown opens in, not a one-time initial state: the
+  // widget exists to be opened, grabbed from and dismissed, so carrying the
+  // last session's unit into the next one would make the configured default
+  // mean nothing after the first use.
+  function applyDefaults() {
+    root.variantChosen = false
+    root.variantId = root.preferredVariantId()
+    root.setUnit(Ipsum.UNITS.indexOf(root.defaultUnit) === -1 ? Ipsum.UNITS[0] : root.defaultUnit)
+    root.setCount(root.defaultCount)
   }
 
   // --- what gets generated --------------------------------------------------
@@ -203,7 +243,9 @@ Panel {
     // NumberField's SpinBox loses its `value: root.value` binding the first
     // time the user edits the field, so the clamped number has to be pushed
     // back rather than left to a binding that may no longer be there.
-    if (countField.field.value !== next)
+    // Guarded because applyDefaults() runs before the panel content is built
+    // the first time, when there is no field to push anything into yet.
+    if (countField && countField.field && countField.field.value !== next)
       countField.field.value = next
   }
 
@@ -475,6 +517,7 @@ Panel {
   onOpenedChanged: {
     if (!opened)
       return
+    root.applyDefaults()
     root.rollSeed()
     root.cursorActive = false
     root.focusSection = "variant"
