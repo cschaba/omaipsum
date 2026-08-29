@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- CI on Gitea Actions: shellcheck, the test suite, a QML parse and a
+  manifest check on every push and pull request.
+
 - A README for people who want to use omaipsum rather than work on it.
 - manifest.json's homepage points at the public GitHub mirror, not the
   private Gitea instance.
