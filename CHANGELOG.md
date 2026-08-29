@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Three text variants — Classic, Bacon and Corporate — as one JSON file each
+  under corpora/, with the schema documented beside them.
+
 - The plugin loads: manifest, MIT licence, and a bar widget that draws its
   icon and opens an empty panel.
 
