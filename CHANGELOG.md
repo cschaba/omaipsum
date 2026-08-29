@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The bar pulldown: variant and unit pickers, a count, a live preview and
+  Regenerate, all reachable from the keyboard.
+
 - Ipsum.js generates exactly the asked-for number of words, sentences or
   paragraphs, reproducibly under a seeded RNG.
 
