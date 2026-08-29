@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- AGENTS.md and DEVELOPMENT.md describe omaipsum rather than the project
+  they were copied from.
+
 - CI on Gitea Actions: shellcheck, the test suite, a QML parse and a
   manifest check on every push and pull request.
 
