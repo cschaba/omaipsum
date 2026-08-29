@@ -6,6 +6,11 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Copying: the text goes to the clipboard through wl-copy, the pulldown
+  closes, and a notification says what was copied.
+- The panel says so when wl-clipboard is not installed, rather than failing
+  at copy time.
+
 - The bar pulldown: variant and unit pickers, a count, a live preview and
   Regenerate, all reachable from the keyboard.
 
