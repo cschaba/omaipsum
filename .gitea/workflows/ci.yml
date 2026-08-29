@@ -1,0 +1,318 @@
+# omaipsum CI — four jobs, ported from omapass's .github/workflows/ci.yml.
+#
+# The location is the difference: Gitea is home (AGENTS.md, "Where it lives"),
+# so the workflow lives in .gitea/workflows. omapass's file is the template for
+# the *jobs*, not for the directory.
+#
+# --- why there is no scripts/check.sh -----------------------------------------
+#
+# Issue #10 says that if this Gitea instance turns out to have no Actions
+# runner, the same checks belong in a local scripts/check.sh instead. They
+# already do, in two places, and neither needs a server:
+#
+#   tests/smoke.sh   parses every shell script with `bash -n`, parses every
+#                    QML file with qmlformat, and validates manifest.json.
+#                    It runs from any checkout, dirty tree and all — this is
+#                    the thing to run before pushing.
+#   scripts/release.sh  runs all of that again, plus the whole of tests/, and
+#                    refuses to write, tag or push if any of it fails.
+#
+# So the requirement behind the fallback — "a broken tree cannot be released
+# even with no runner attached" — is satisfied today. A third copy of the same
+# four checks in scripts/check.sh would add exactly one check that smoke.sh
+# does not already make (shellcheck) at the price of a fourth place to keep in
+# step, and could not even be wired into release.sh the way the issue imagines,
+# because release.sh performs the checks inline already. Hence: workflow only.
+#
+# What CI adds over the local gates is therefore narrow and worth being honest
+# about — shellcheck, and running the suite on a machine that is not the one it
+# was written on.
+#
+# --- the label -----------------------------------------------------------------
+#
+# `runs-on: ubuntu-latest` must match a label the instance's runner actually
+# registers. A label no runner claims does not fail: the job queues forever and
+# the run sits there pending, which is the single most likely way this file
+# silently does nothing. If runs show up but never start, check the label
+# first, not the steps. The jobs also assume an Ubuntu/Debian-ish image with
+# apt-get; act_runner has historically defaulted `ubuntu-latest` to a slim
+# node image, so the installs below tolerate running as root without sudo and
+# every tool lookup fails loudly rather than skipping.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  shell:
+    name: shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          SUDO=""; [[ $(id -u) -eq 0 ]] || SUDO=sudo
+          $SUDO apt-get update -qq
+          $SUDO apt-get install -y -qq shellcheck
+          shellcheck --version
+
+      # Globbed, never a hardcoded list — the same reason scripts/release.sh
+      # globs: install.sh, uninstall.sh and tests/ arrived with their own
+      # issues, and a list stops covering the repository the day one lands.
+      - name: Parse every shell script
+        run: |
+          mapfile -d '' scripts < <(find . -path ./.git -prune -o -type f -name '*.sh' -print0 | sort -z)
+          (( ${#scripts[@]} )) || { echo "::error::no shell scripts found — that cannot be right"; exit 1; }
+          for f in "${scripts[@]}"; do
+            echo "  bash -n $f"
+            bash -n "$f"
+          done
+          echo "${#scripts[@]} shell script(s) parse"
+
+      - name: Shellcheck
+        run: |
+          mapfile -d '' scripts < <(find . -path ./.git -prune -o -type f -name '*.sh' -print0 | sort -z)
+          (( ${#scripts[@]} )) || { echo "::error::no shell scripts found — that cannot be right"; exit 1; }
+          shellcheck --severity=warning "${scripts[@]}"
+          echo "${#scripts[@]} shell script(s) clean at --severity=warning"
+
+  tests:
+    name: test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The suite needs node (tests/generator.sh evaluates Ipsum.js) and
+      # qmlformat (tests/smoke.sh parses the QML). Both are *skipped* by the
+      # tests when missing rather than failed, which is right for a developer's
+      # machine and wrong for CI: a runner image without them would produce a
+      # green job that checked almost nothing. So install them here and assert
+      # them in the next step.
+      - name: Install node and Qt tooling
+        run: |
+          SUDO=""; [[ $(id -u) -eq 0 ]] || SUDO=sudo
+          packages=(qt6-declarative-dev-tools)
+          command -v node >/dev/null 2>&1 || packages+=(nodejs)
+          $SUDO apt-get update -qq
+          $SUDO apt-get install -y -qq "${packages[@]}"
+
+          # Debian names the interpreter `nodejs` on some images; the tests
+          # call `node`.
+          if ! command -v node >/dev/null 2>&1 && command -v nodejs >/dev/null 2>&1; then
+            $SUDO ln -sf "$(command -v nodejs)" /usr/local/bin/node
+          fi
+
+          # Ubuntu keeps the Qt 6 tools out of PATH, so resolve rather than
+          # assume, and symlink the result somewhere already on PATH — the
+          # tests invoke a bare `qmlformat`. Failing loudly beats a check that
+          # quietly never runs.
+          if ! command -v qmlformat >/dev/null 2>&1; then
+            found=""
+            for candidate in qmlformat6 /usr/lib/qt6/bin/qmlformat \
+                             /usr/lib/x86_64-linux-gnu/qt6/bin/qmlformat; do
+              if command -v "$candidate" >/dev/null 2>&1 || [[ -x $candidate ]]; then
+                found="$candidate"; break
+              fi
+            done
+            if [[ -n $found ]]; then
+              $SUDO ln -sf "$(command -v "$found" || echo "$found")" /usr/local/bin/qmlformat
+            fi
+          fi
+
+      - name: Refuse a suite that would skip its checks
+        run: |
+          status=0
+          for tool in node qmlformat; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "  $tool -> $(command -v "$tool")"
+            else
+              echo "::error::$tool is missing — the suite would skip its checks and still pass"
+              status=1
+            fi
+          done
+          dpkg -L qt6-declarative-dev-tools 2>/dev/null | grep -iE 'bin/' || true
+          exit $status
+
+      # Globbed, like release.sh does it: issue #9's files may land under names
+      # nothing here has heard of, and a hardcoded list would run none of them
+      # while still reporting a pass. Each script makes its own throwaway
+      # directory and redirects HOME/XDG_* into it, so the job needs no sandbox
+      # of its own beyond the runner's checkout.
+      - name: Run every executable in tests/
+        run: |
+          [[ -d tests ]] || { echo "::error::there is no tests/ directory"; exit 1; }
+          mapfile -d '' suite < <(find tests -maxdepth 1 -type f -perm -u+x -print0 | sort -z)
+          (( ${#suite[@]} )) || { echo "::error::no executable tests in tests/"; exit 1; }
+          for t in "${suite[@]}"; do
+            echo "--- $t"
+            "$t"
+          done
+          echo "${#suite[@]} test script(s) pass"
+
+  qml:
+    name: qml syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt tooling
+        run: |
+          SUDO=""; [[ $(id -u) -eq 0 ]] || SUDO=sudo
+          $SUDO apt-get update -qq
+          $SUDO apt-get install -y -qq qt6-declarative-dev-tools
+
+      # qmlformat, not qmllint: qs.Commons and qs.Ui resolve only inside the
+      # Omarchy shell, and older qmllint treats an unresolved import as an
+      # error, so it rejects every file here regardless of syntax. qmlformat is
+      # a pure parser — it ignores imports and still refuses a real syntax
+      # error, which is the part CI can meaningfully check. Type checking is a
+      # local job: `qmllint -I /usr/share/omarchy/shell *.qml`.
+      #
+      # Locating and parsing are one step on purpose. omapass splits them and
+      # passes the path between them through $GITHUB_OUTPUT; that works, but
+      # keeping it in one shell is one fewer runner feature to depend on and
+      # loses nothing.
+      - name: Parse every QML file
+        run: |
+          # Ubuntu keeps the Qt 6 tools out of PATH, so resolve rather than
+          # assume. Failing loudly beats a check that quietly never runs.
+          bin=""
+          for candidate in qmlformat qmlformat6 /usr/lib/qt6/bin/qmlformat \
+                           /usr/lib/x86_64-linux-gnu/qt6/bin/qmlformat; do
+            if command -v "$candidate" >/dev/null 2>&1 || [[ -x $candidate ]]; then
+              bin="$candidate"; echo "found: $candidate"; break
+            fi
+          done
+          if [[ -z $bin ]]; then
+            echo "::error::qmlformat not found after installing qt6-declarative-dev-tools"
+            dpkg -L qt6-declarative-dev-tools 2>/dev/null | grep -iE 'bin/' || true
+            exit 1
+          fi
+
+          mapfile -d '' qml < <(find . -path ./.git -prune -o -type f -name '*.qml' -print0 | sort -z)
+          (( ${#qml[@]} )) || { echo "::error::no *.qml files found — this is a QML plugin"; exit 1; }
+          status=0
+          for f in "${qml[@]}"; do
+            if "$bin" "$f" >/dev/null 2>&1; then
+              echo "  parses: $f"
+            else
+              echo "::error file=${f#./}::does not parse"
+              "$bin" "$f" || true
+              status=1
+            fi
+          done
+          if (( status == 0 )); then
+            echo "all ${#qml[@]} QML file(s) parse"
+          fi
+          exit $status
+
+  manifest:
+    name: manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Mirrors what Omarchy actually enforces in
+      # /usr/share/omarchy/shell/services/PluginRegistry.qml's
+      # validateManifest(): schemaVersion exactly 1, the five required fields,
+      # a plugin id with no slash and no "..", a non-empty kinds array, entry
+      # points that are relative paths inside the plugin, and a
+      # barWidget.defaultSection of left/center/right. A manifest this rejects
+      # is one the shell would decline to load, silently, with a console
+      # warning nobody is watching.
+      #
+      # Two checks go beyond the registry because they catch drift the shell
+      # cannot see: semver (release.sh derives the next tag from this field and
+      # will not parse anything else), and barWidget.defaults.variant naming a
+      # real file in corpora/ — a settings default pointing at a deleted corpus
+      # is exactly the kind of quiet breakage that survives every other check
+      # here. (tests/smoke.sh asks the corpus question too, from the other
+      # direction; this job repeats it so it stays self-contained — it installs
+      # nothing and can run on a machine with neither node nor Qt.)
+      - name: Validate manifest.json
+        run: |
+          python3 - <<'PY'
+          import json, os, re, sys
+
+          errors = []
+          def bad(message):
+              errors.append(message)
+
+          try:
+              with open("manifest.json") as handle:
+                  manifest = json.load(handle)
+          except Exception as exc:
+              sys.exit(f"manifest.json does not parse: {exc}")
+
+          if not isinstance(manifest, dict):
+              sys.exit("manifest.json is not an object")
+
+          for key in ("schemaVersion", "id", "name", "version", "kinds", "entryPoints"):
+              if manifest.get(key) is None:
+                  bad(f"missing required key {key!r}")
+
+          if manifest.get("schemaVersion") != 1:
+              bad(f"schemaVersion must be exactly 1, got {manifest.get('schemaVersion')!r}")
+
+          version = manifest.get("version")
+          if not isinstance(version, str) or not re.fullmatch(
+                  r"\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?", version):
+              bad(f"version {version!r} is not semver")
+
+          plugin_id = manifest.get("id")
+          if not isinstance(plugin_id, str) or not plugin_id \
+                  or "/" in plugin_id or ".." in plugin_id:
+              bad(f"invalid plugin id {plugin_id!r}")
+
+          kinds = manifest.get("kinds")
+          if not isinstance(kinds, list) or not kinds:
+              bad(f"kinds must be a non-empty array, got {kinds!r}")
+
+          entry_points = manifest.get("entryPoints")
+          if not isinstance(entry_points, dict) or not entry_points:
+              bad(f"entryPoints must be a non-empty object, got {entry_points!r}")
+          else:
+              for kind, path in sorted(entry_points.items()):
+                  if not isinstance(path, str) or not path:
+                      bad(f"entryPoint {kind!r} is not a path: {path!r}")
+                  elif path.startswith("/") or ".." in path:
+                      bad(f"unsafe entryPoint {kind!r} -> {path!r}")
+                  elif not os.path.isfile(path):
+                      bad(f"entryPoint {kind!r} -> {path!r} does not exist")
+                  else:
+                      print(f"  entryPoint {kind} -> {path}")
+
+          bar = manifest.get("barWidget")
+          if bar is not None and not isinstance(bar, dict):
+              bad(f"barWidget must be an object, got {bar!r}")
+          elif isinstance(bar, dict):
+              section = bar.get("defaultSection")
+              if section is not None and section not in ("left", "center", "right"):
+                  bad(f"barWidget.defaultSection {section!r} is not left/center/right")
+
+              defaults = bar.get("defaults")
+              if defaults is not None and not isinstance(defaults, dict):
+                  bad(f"barWidget.defaults must be an object, got {defaults!r}")
+              elif isinstance(defaults, dict) and "variant" in defaults:
+                  variant = defaults["variant"]
+                  corpus = os.path.join("corpora", f"{variant}.json")
+                  if not isinstance(variant, str) or not os.path.isfile(corpus):
+                      bad(f"barWidget.defaults.variant {variant!r} has no {corpus}")
+                  else:
+                      print(f"  defaults.variant {variant} -> {corpus}")
+
+          if errors:
+              for message in errors:
+                  print(f"::error::manifest.json: {message}")
+              sys.exit(1)
+
+          print(f"manifest.json ok: {manifest['id']} {manifest['version']}")
+          PY
