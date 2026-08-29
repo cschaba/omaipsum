@@ -6,6 +6,10 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- install.sh and uninstall.sh: symlink the checkout, register through
+  omarchy's own commands, and print the optional keybinding rather than
+  writing it.
+
 - Default variant, unit and amount are configurable from the bar's own widget
   settings; the pulldown opens in them.
 
