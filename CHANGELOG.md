@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Ipsum.js generates exactly the asked-for number of words, sentences or
+  paragraphs, reproducibly under a seeded RNG.
+
 - Three text variants — Classic, Bacon and Corporate — as one JSON file each
   under corpora/, with the schema documented beside them.
 
