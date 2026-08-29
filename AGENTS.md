@@ -1,7 +1,60 @@
 # Working on omaipsum
 
-Conventions for anyone — human or agent — making changes here. The reasoning
-behind the code is in [DEVELOPMENT.md](DEVELOPMENT.md); this is about process.
+Conventions for anyone — human or agent — making changes here, and the single
+place that describes them: [CLAUDE.md](CLAUDE.md) is a pointer to this file,
+nothing more. The reasoning behind the code is in
+[DEVELOPMENT.md](DEVELOPMENT.md).
+
+## Where things stand
+
+**This repository is documentation only. There is no code yet.** `README.md`,
+this file, `DEVELOPMENT.md` and `CHANGELOG.md` are all of it, and the changelog
+sits at `0.0.0 — Initial setup`. Do not assume a file exists because a document
+names one; most of what is described below is the target, not something you can
+run today.
+
+What omaipsum is meant to be: an **Omarchy plugin** (Quickshell/QML, loaded by
+`omarchy-shell`) — a bar widget that generates funny lorem-ipsum text. The
+README fixes the product decisions. Three text variants in the first version,
+a UI modelled on [Tiny Ipsum](https://macmenubar.com/tiny-ipsum/), and a count
+selector over words, sentences and paragraphs.
+
+The work is broken into thirteen issues across two milestones: `0.1.0 —
+generate and copy` gets a widget that produces text and copies it, `0.2.0 —
+shipping` adds install, tests, CI, a release script and a README worth reading.
+
+## Where it lives
+
+**Gitea is home.** `origin` is
+`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, and every change, issue
+and pull request goes there first. A GitHub mirror follows once there is a
+first working version — that is also when a marketplace listing becomes
+relevant, since it needs a public repository.
+
+CI therefore belongs in `.gitea/workflows`. omapass keeps its workflows under
+`.github/workflows`; those are a template for the *jobs*, not for the location.
+
+The `tea` CLI on the development machine authenticates as `omarchy-ai`. It
+needs write access to `carsten/omaipsum`, or every issue and pull request
+command answers `not found`.
+
+## omapass is the reference
+
+`cschaba/omapass` — checked out at `~/Projects/omapass`, symlinked into
+`~/.config/omarchy/plugins/cschaba.omapass` — is the same author's finished
+Omarchy plugin, and it is where this file and `DEVELOPMENT.md` were copied
+from. It is the worked example for everything omaipsum still needs:
+`manifest.json`, `install.sh` and `uninstall.sh`, `scripts/release.sh`,
+`tests/`, the CI jobs, and the bar-icon-with-a-pulldown shape in
+`BarWidget.qml`. Its `DEVELOPMENT.md` holds Quickshell traps that apply here
+unchanged.
+
+Copying from it is the point. Copying from it *without reading* is how the
+passages below came to describe a password manager: omaipsum handles no
+secrets and needs no `pass`, GPG or PAM, but parts of this file still say
+otherwise, and `DEVELOPMENT.md` still opens "Notes for working on omapass
+itself". Issue #13 tracks the cleanup; until it lands, prefer what the code
+does over what a leftover sentence claims.
 
 ## One branch per issue
 
@@ -52,7 +105,47 @@ evaluate it and hand back options rather than acting on your own judgement.
 ## Before you believe a test
 
 **Restart the shell after changing any QML.** `omarchy-shell` loads a plugin's
-QML once at startup and keeps it for the life of the process. 
+QML once at startup and keeps it for the life of the process. `rescanPlugins`
+is not a substitute: the shell watches `~/.config/omarchy/plugins` with
+`inotifywait -r`, which does not follow symlinked directories, so a symlinked
+checkout never fires it.
+
+Two more ways a change can look broken when it is not, both from omapass:
+
+**A bar widget must publish its own implicit size.** The bar sizes each slot
+from the active item's `implicitWidth`/`implicitHeight`, so a widget root that
+does not set them gets a 0×0 slot and renders nothing — no icon, no gap, no
+error, no log line. `panels/power/Panel.qml` does it explicitly.
+
+**Errors in a plugin can surface silently.** Omarchy's panel Loader error path
+calls `errorString()` as a function, which throws, so the real message is lost.
+To find out what a file actually says, load it in a throwaway Quickshell config
+*outside* the shell's config root — inside it, Quickshell treats the directory
+as a module and sibling types stop resolving, which produces misleading
+`X is not a type` errors instead. The recipe is in omapass's `DEVELOPMENT.md`.
+
+And one about the version: **it lives only in `manifest.json`.** Omarchy
+requires it there, so a second copy anywhere else could only drift out of step.
+
+## Commands
+
+Nothing here builds, runs or tests yet. What the issues are working towards,
+following omapass:
+
+```bash
+./install.sh                                  # symlink the checkout into ~/.config/omarchy/plugins/
+omarchy restart shell                         # the only reliable reload after a QML edit
+omarchy-shell cschaba.omaipsum.widget toggle  # open the bar pulldown
+journalctl --user -f | grep omarchy-shell     # where QML errors land
+tests/smoke.sh                                # the suite
+scripts/release.sh patch --dry-run            # what a release would do
+qmllint -I /usr/share/omarchy/shell *.qml     # type checking, locally
+```
+
+CI parses QML with `qmlformat` rather than `qmllint`: `qs.Commons` and `qs.Ui`
+resolve only inside the Omarchy shell, and older `qmllint` treats an unresolved
+import as an error, so it rejects every file regardless of syntax. `qmlformat`
+ignores imports and still catches real syntax errors.
 
 ## Use the Omarchy API
 
