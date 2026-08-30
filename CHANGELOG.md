@@ -6,6 +6,10 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The docs are split by audience — user, developer, devops, architecture —
+  and the reasoning behind each decision now lives in the repository rather
+  than in closed issues.
+
 - The issue tracker moved to GitHub too, keeping the original numbers, so
   every Fixes #N in the history resolves.
 

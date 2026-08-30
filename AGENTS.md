@@ -20,19 +20,24 @@ both halves and `.github/workflows/ci.yml` runs the checks on every push.
 [README.md](README.md) describes it for someone using it;
 [DEVELOPMENT.md](DEVELOPMENT.md) describes the code.
 
-The work was broken into thirteen issues across two milestones: `0.1.0 —
-generate and copy` got a widget that produces text and copies it, `0.2.0 —
-shipping` added install, tests, CI, a release script and a README worth
-reading. Nothing has been released yet: `manifest.json` still holds the `0.0.1`
-it was scaffolded with, and everything since sits under `[Unreleased]` in the
-changelog.
+The work began as thirteen issues across two milestones — `0.1.0 — generate and
+copy` got a widget that produces text and copies it, `0.2.0 — shipping` added
+install, tests, CI, a release script and a README worth reading — and has grown
+since with the bugs and refinements that only running it turned up. Nothing has
+been released yet: `manifest.json` still holds the `0.0.1` it was scaffolded
+with, and everything since sits under `[Unreleased]` in the changelog.
+
+A count of issues here would go stale the day after it was written, which is
+its own small lesson: state what is durable, and let the tracker hold what is
+not.
 
 ## Where it lives
 
 **Everything lives on GitHub**: `origin`, `git@github.com:cschaba/omaipsum.git`,
 public — code, issues, releases and CI. Gitea, at
-`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, is a private mirror:
-pushed to, never worked in.
+`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, is a private **backup of
+the code** and nothing more: pushed to, never worked in, never read from. If it
+vanished tomorrow the only thing lost would be a spare copy.
 
 The project started the other way round, and the reason for the swap is worth
 keeping. The Gitea instance has no Actions runner, so a workflow committed
@@ -65,6 +70,28 @@ two files once came to describe a password manager: omaipsum handles no
 secrets and needs no `pass`, GPG or PAM. When something read across from
 omapass has no reason to exist on this side, take it out rather than leave it
 somewhere it will be believed.
+
+## An issue is scaffolding, the code is the building
+
+**Before implementation an issue is the most valuable document there is** — it
+states the goal, the constraints, and the decision to be made. Afterwards it
+must not be the only place that knowledge lives.
+
+Someone reading this repository in a year, with no network and no tracker and
+no memory of the discussion, has to understand what the code does from the
+code. So the code is verbose on purpose: comments explain the trap, the
+constraint, the thing that would otherwise look arbitrary, and naming carries
+intent. Nothing important is left implicit on the grounds that the issue
+explains it.
+
+**The one exception is the *why*.** Why a choice was made rather than the
+obvious alternative is usually not derivable from the code at all — the code
+shows the decision and never the options it beat or the reason they lost. That
+reasoning does not stay in the tracker. It moves into the docs here, and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is where the significant ones
+live.
+
+The test: **close the tracker, and nothing is lost but history.**
 
 ## One branch per issue
 
