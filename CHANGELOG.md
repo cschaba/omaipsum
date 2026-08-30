@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- AGENTS.md warns that a closing keyword in commit prose closes the issue
+  even when the sentence denies it.
+
 ## [0.1.2] — 2026-08-30
 
 - The version at the foot of the panel is a link to the project homepage,
