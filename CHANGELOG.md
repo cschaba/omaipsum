@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A third-party apt source being unavailable no longer fails CI.
+
 ## [0.1.4] — 2026-08-30
 
 - A corpus file can no longer make the panel fetch anything: corpus text is

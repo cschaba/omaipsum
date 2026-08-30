@@ -98,7 +98,14 @@ jobs:
           SUDO=""; [[ $(id -u) -eq 0 ]] || SUDO=sudo
           packages=(qt6-declarative-dev-tools)
           command -v node >/dev/null 2>&1 || packages+=(nodejs)
-          $SUDO apt-get update -qq
+          # apt-get update must not be what fails this job. The runner image
+          # carries third-party sources we do not use — a Microsoft azure-cli
+          # repo went unsigned and took a release build red with it (#32) —
+          # and none of the packages below come from any of them. Let update
+          # report and carry on; install is the step that decides, and the
+          # PATH assertions afterwards are what catch a package that really
+          # did not arrive.
+          $SUDO apt-get update -qq || true
           $SUDO apt-get install -y -qq "${packages[@]}"
 
           if ! command -v node >/dev/null 2>&1 && command -v nodejs >/dev/null 2>&1; then
