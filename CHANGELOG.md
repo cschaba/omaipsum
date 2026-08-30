@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The product name is written OmaIpsum in the docs, while ids, paths and
+  artifacts stay lowercase.
+
 ## [0.1.6] — 2026-08-30
 
 - The plugin shows itself as "OmaIpsum".

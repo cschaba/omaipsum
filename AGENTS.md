@@ -1,4 +1,4 @@
-# Working on omaipsum
+# Working on OmaIpsum
 
 Conventions for anyone — human or agent — making changes here, and the single
 place that describes them: [CLAUDE.md](CLAUDE.md) is a pointer to this file,
@@ -7,7 +7,7 @@ nothing more. The reasoning behind the code is in
 
 ## Where things stand
 
-omaipsum is an **Omarchy plugin** (Quickshell/QML, loaded by `omarchy-shell`)
+OmaIpsum is an **Omarchy plugin** (Quickshell/QML, loaded by `omarchy-shell`)
 — a bar widget that generates funny lorem-ipsum text. Three text variants, a
 UI modelled on [Tiny Ipsum](https://macmenubar.com/tiny-ipsum/), and a count
 selector over words, sentences and paragraphs.
@@ -66,7 +66,7 @@ lives as copies. It is the worked example behind most of what is here:
 holds Quickshell traps that apply here unchanged; they are restated below.
 
 Copying from it is the point. Copying from it *without reading* is how these
-two files once came to describe a password manager: omaipsum handles no
+two files once came to describe a password manager: OmaIpsum handles no
 secrets and needs no `pass`, GPG or PAM. When something read across from
 omapass has no reason to exist on this side, take it out rather than leave it
 somewhere it will be believed.
@@ -235,7 +235,7 @@ looks, and usually wrong.
 
 ## Stay inside the plugin
 
-**omaipsum never creates, edits or deletes a file outside its own directories.**
+**OmaIpsum never creates, edits or deletes a file outside its own directories.**
 
 What is ours:
 
@@ -269,7 +269,7 @@ Prefer them over touching `shell.json`, which they own.
 
 ## Publishing
 
-**omaipsum is not on the [Omarchy plugin marketplace][mp], and has not been
+**OmaIpsum is not on the [Omarchy plugin marketplace][mp], and has not been
 submitted.** The public mirror was the prerequisite and it exists; the
 submission itself is still to do. Nothing in this repository claims a listing,
 and nothing should until one is made.
@@ -284,10 +284,10 @@ the branch rule above: `main` is the public face, not a workspace.
 
 The submission form is a checklist, and every item on it is a claim about how
 the plugin behaves, made to people who cannot check it themselves. What
-omaipsum could tick today, and what keeps each one true afterwards:
+OmaIpsum could tick today, and what keeps each one true afterwards:
 
 - **"Does not overwrite user configuration without explicit consent."**
-  True, and worth stating precisely rather than grandly. omaipsum writes
+  True, and worth stating precisely rather than grandly. OmaIpsum writes
   nothing outside its own directories *itself*. Installing it does change one
   file outside them — `~/.config/omarchy/shell.json` — because `install.sh`
   calls `omarchy plugin enable` and `omarchy bar put`, and Omarchy records the
@@ -333,7 +333,7 @@ does counts the same as what a shipped script does.
 
 ### Capabilities it will flag
 
-These are detected and reported to the reviewer. Of omaipsum:
+These are detected and reported to the reviewer. Of OmaIpsum:
 
 - `installer` — `install.sh`, `uninstall.sh` and `scripts/release.sh`.
 - `remote-build` — the `git clone` and the `omarchy plugin add <url>` in the

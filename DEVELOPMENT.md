@@ -1,6 +1,6 @@
-# Developing omaipsum
+# Developing OmaIpsum
 
-The entry point for working on omaipsum itself. This file used to hold
+The entry point for working on OmaIpsum itself. This file used to hold
 everything; it is now a pointer, because one document for four different
 readers is a document nobody finishes.
 
@@ -9,7 +9,7 @@ readers is a document nobody finishes.
 | [docs/DEVELOPER.md](docs/DEVELOPER.md) | changing the code |
 | [docs/DEVOPS.md](docs/DEVOPS.md) | shipping it |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | asking why it is like this |
-| [README.md](README.md) | using omaipsum rather than working on it |
+| [README.md](README.md) | using OmaIpsum rather than working on it |
 
 [AGENTS.md](AGENTS.md) has the conventions a change is expected to follow, and
 [CHANGELOG.md](CHANGELOG.md) records what changed when.
