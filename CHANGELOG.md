@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-08-30
+
 - The version at the foot of the panel is a link to the project homepage,
   with a tooltip showing where it goes.
 
