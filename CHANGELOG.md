@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-08-30
+
 - A narrated screencast in the README, behind a thumbnail.
 
 - AGENTS.md warns that a closing keyword in commit prose closes the issue
