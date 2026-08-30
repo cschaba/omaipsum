@@ -396,7 +396,9 @@ Panel {
   // execArgv would put a bash between the widget and the only two binaries it
   // is meant to run.
   function notify(headline, detail, urgency) {
-    var args = ["omarchy-notification-send", "--app-name", "omaipsum", "-g", "󰈙", "-u", urgency, headline]
+    // The same glyph as the bar icon, so the toast is recognisably from the
+    // thing you just clicked rather than from some other document tool.
+    var args = ["omarchy-notification-send", "--app-name", "omaipsum", "-g", "󰰌", "-u", urgency, headline]
     // The description is optional and the parser reads the next positional as
     // one, so an empty string would show as a blank second line.
     if (detail)
@@ -553,8 +555,29 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     // A Nerd Font glyph in `text`, the way every first-party bar widget draws
-    // its icon; nf-md-file_document, the same one Omarchy uses for a document.
-    text: "󰈙"
+    // its icon. U+F0C0C is nf-md-alpha_l_box_outline — an L in a square frame,
+    // so the bar carries a mark of omaipsum's own instead of the old
+    // nf-md-file_document, which said "document" and was the same glyph
+    // Omarchy already uses for one.
+    //
+    // Verified present rather than assumed. The family is bar.fontFamily
+    // falling back to Style.font.family, which is the fontconfig alias
+    // `monospace`; `fc-match monospace` resolves it to JetBrainsMono Nerd
+    // Font, and `fc-list :charset=f0c0c` lists that family. The obvious
+    // alternative — ℒ, U+2112, script capital L — is not in that font at all:
+    // only Noto and the gsfonts carry it here, so it would arrive out of a
+    // fallback serif at the wrong weight, or as nothing.
+    //
+    // Outline rather than the filled nf-md-alpha_l_box (U+F0B13): a filled
+    // tile leaves the L as a counter, and a transparent bar paints no
+    // background of its own — plugins/bar/Bar.qml sets the fill to
+    // "transparent" — so that counter is whatever wallpaper happens to be
+    // behind it. The outline's L is ink either way. The bare nf-md-alpha_l
+    // (U+F0AF9) draws its letter small and thin, and at the bar's 13px it,
+    // like a plain "L", goes weightless beside the lock and the robot next to
+    // it; the circle variants read a shade closer to the power glyph and give
+    // the letter less room than the box does.
+    text: "󰰌"
     tooltipText: "Lorem ipsum"
     onPressed: root.toggle()
   }
