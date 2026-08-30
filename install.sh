@@ -73,16 +73,54 @@ if ! command -v omarchy >/dev/null 2>&1; then
 fi
 
 # The shell keeps its own list of what is installed, and a directory that
-# appeared after it started is not on it. Its inotify watch on the plugins
-# directory does not follow symlinked directories either, so a linked checkout
-# never announces itself. Quiet and best-effort: with no shell running there is
-# nobody to tell, and that is not a failure.
+# appeared after it started is not on it. Quiet and best-effort: with no shell
+# running there is nobody to tell, and that is not a failure.
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+
+# ...and then wait for it to land. rescanPlugins is fire-and-forget: the IPC
+# call returns when the shell accepts it, not when the scan has finished, so
+# enabling on the next line asks about a plugin the shell has not read yet and
+# is told it does not exist. It takes about 50ms here. omarchy-plugin-add has
+# the same problem and solves it the same way, polling the plugin list rather
+# than sleeping a guessed amount.
+#
+# This is what made a fresh install fail while reporting nothing: `-q` returns
+# success even when the call does nothing, so a rescan that never happened and
+# one that worked look identical from here.
+plugin_known() {
+  omarchy plugin list 2>/dev/null | grep -qF "$PLUGIN_ID"
+}
+
+wait_for_discovery() {
+  local attempt
+  for (( attempt = 0; attempt < 40; attempt++ )); do
+    plugin_known && return 0
+    sleep 0.05
+  done
+  return 1
+}
+
+# Where the widget goes, asked once rather than assumed. This mirrors
+# select_bar_widget_placement() in omarchy-plugin-add: the manifest's own
+# defaultSection is the pre-selection, and a non-interactive run or a missing
+# gum takes that default silently — install.sh has to stay scriptable.
+PLACEMENT=()
+choose_placement() {
+  local default_section chosen
+  [[ -t 0 && -t 1 ]] || return 0
+  command -v gum >/dev/null 2>&1 || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  default_section=$(jq -r '.barWidget.defaultSection // "center"' "$SOURCE_DIR/manifest.json" 2>/dev/null) || return 0
+  chosen=$(printf '%s\n' left center right |
+    gum choose --header="Place omaipsum in which bar section?" --selected "$default_section") || return 0
+  [[ -n $chosen ]] || return 0
+  PLACEMENT=(--section "$chosen")
+}
 
 register() {
   # `plugin enable` places a bar widget as well as enabling it, and leaves an
   # entry that is already in the layout where it is.
-  omarchy plugin enable "$PLUGIN_ID" || return 1
+  omarchy plugin enable "$PLUGIN_ID" "${PLACEMENT[@]}" || return 1
   # `bar put` is the unattended verb: it leaves a widget that is already on the
   # bar exactly where its owner put it, and waits out a shell that is still
   # starting up. After a successful enable it changes nothing — which is what
@@ -90,12 +128,23 @@ register() {
   omarchy bar put "$PLUGIN_ID" || return 1
 }
 
+if ! wait_for_discovery; then
+  say "! the shell has not picked omaipsum up."
+  say "  That is what happens when omarchy-shell is not running — start it, or"
+  say "  restart it, and this script will work on the next run:"
+  say "      omarchy restart shell"
+  say "      $SOURCE_DIR/install.sh"
+  exit 1
+fi
+
+choose_placement
+
 if register_output="$(register 2>&1)"; then
   say "✓ enabled, and the widget is on the bar"
 else
   say "! omarchy could not register omaipsum. It said:"
   printf '%s\n' "$register_output" | sed 's/^/      /'
-  say "  Usually this means the shell is not running yet. Once it is:"
+  say "  Run these once the shell is up:"
   say "      omarchy plugin enable $PLUGIN_ID"
   say "      omarchy bar put $PLUGIN_ID"
 fi
