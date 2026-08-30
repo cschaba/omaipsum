@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Three more variants: Space Opera, High Fantasy and Sitcom.
+
 - The README says plainly that this project was built with AI, and what
   that does and does not mean for someone deciding to trust it.
 
