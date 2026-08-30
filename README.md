@@ -195,9 +195,19 @@ followed by `hyprctl reload`.
 ## Working on it
 
 omaipsum is a directory of QML, a JavaScript generator and two shell scripts.
-[DEVELOPMENT.md](DEVELOPMENT.md) covers building and testing it,
-[AGENTS.md](AGENTS.md) the conventions a change is expected to follow, and
-[CHANGELOG.md](CHANGELOG.md) records what changed when.
+[DEVELOPMENT.md](DEVELOPMENT.md) is where to start.
+
+## Documentation
+
+| | |
+|---|---|
+| [DEVELOPMENT.md](DEVELOPMENT.md) | the entry point for working on omaipsum |
+| [docs/DEVELOPER.md](docs/DEVELOPER.md) | the layout, the edit loop, tests |
+| [docs/DEVOPS.md](docs/DEVOPS.md) | remotes, CI, releasing, install mechanics |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | why it is shaped like this |
+| [AGENTS.md](AGENTS.md) | the conventions a change is expected to follow |
+| [CHANGELOG.md](CHANGELOG.md) | what changed when |
+| [corpora/README.md](corpora/README.md) | the corpus schema for a variant |
 
 ## License
 

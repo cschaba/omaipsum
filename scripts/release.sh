@@ -40,8 +40,8 @@ cd "$ROOT" || exit 1
 MANIFEST="$ROOT/manifest.json"
 CHANGELOG="$ROOT/CHANGELOG.md"
 
-# GitHub is where the code lives; Gitea is the mirror and the issue tracker
-# (DEVELOPMENT.md, "Where the code lives"). The release is *made* at origin,
+# GitHub is where the code and the issues live; Gitea is a backup of the code
+# (docs/DEVOPS.md, "Remotes"). The release is *made* at origin,
 # because that is what the marketplace listing points at and what CI runs on,
 # and it is the remote this script insists on being in step with before it
 # writes anything. The mirror is pushed second and best-effort: once the tag is

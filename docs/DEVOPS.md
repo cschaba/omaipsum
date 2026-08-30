@@ -1,0 +1,180 @@
+# Shipping omaipsum
+
+For someone releasing it, running CI on it, or working out what installing it
+does to a machine.
+
+[DEVELOPER.md](DEVELOPER.md) covers changing the code and running the tests.
+[ARCHITECTURE.md](ARCHITECTURE.md) holds the reasoning behind the decisions
+below — why GitHub rather than Gitea, why the version lives in one file.
+[../AGENTS.md](../AGENTS.md) has the process rules, including the marketplace
+promises this project would be making if it were listed.
+
+## Remotes
+
+- **`origin`** is `git@github.com:cschaba/omaipsum.git`, public, and holds the
+  code, the issues, the releases and CI.
+- **`gitea`** is `ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`,
+  private, and is a backup of the code.
+
+Everything happens at `origin`. Gitea is pushed to and never worked in; if it
+vanished tomorrow the only thing lost would be a spare copy. It also holds a
+frozen copy of issues 1 to 19 as they stood when the tracker moved — nothing
+mirrors issues, so file nothing there.
+
+The project started the other way round, and
+[ARCHITECTURE.md](ARCHITECTURE.md) records why it swapped and why moving the
+issues was safe. The short version: the Gitea instance has no Actions runner,
+and CI that cannot run is not CI.
+
+## CI
+
+`.github/workflows/ci.yml`. Four jobs, on every push to `main`, every pull
+request, and on `workflow_dispatch`:
+
+| Job | |
+|-----|--|
+| `shell` | `bash -n` and `shellcheck --severity=warning` over every script |
+| `test suite` | every executable in `tests/`, with node and qmlformat first |
+| `qml syntax` | a `qmlformat` parse of every QML file |
+| `manifest` | what the shell's registry enforces, plus semver and the corpus |
+
+The script and QML lists are globbed rather than written out, in the workflow
+and in `scripts/release.sh` alike: a hardcoded list stops covering the
+repository the day a file lands, while still reporting a pass.
+
+The test job installs node and `qmlformat` and then asserts they are there.
+Both test scripts skip rather than fail when a tool is missing, which is right
+on a laptop and wrong on a runner — a slim image would otherwise produce a
+green job that checked almost nothing.
+
+The QML job parses rather than lints. `qs.Commons` and `qs.Ui` resolve only
+inside the running Omarchy shell, and older `qmllint` treats an unresolved
+import as an error, so it rejects every file here regardless of syntax.
+`qmlformat` ignores imports and still refuses a real syntax error. Run
+`qmllint -I /usr/share/omarchy/shell *.qml` locally for the type checking CI
+cannot do.
+
+If a run ever appears but never starts, check the `runs-on` label before the
+steps: a job no runner claims does not fail, it queues, and sits pending
+forever. That quiet failure is what the Gitea instance would have given us —
+it has no runner at all, which is why the code moved.
+
+**There is no `scripts/check.sh`**, and the reason survives the move.
+`tests/smoke.sh` already parses every script and every QML file and validates
+the manifest from any checkout, and `scripts/release.sh` runs all of that plus
+the whole suite and refuses to write if any of it fails. What CI adds over
+those two is narrow and worth being honest about: shellcheck, and running the
+tests on a machine that is not the one they were written on.
+
+## Releasing
+
+```bash
+scripts/release.sh patch --dry-run   # the whole plan, in order, writing nothing
+scripts/release.sh minor             # or major, or an explicit 0.4.0
+```
+
+One release per fixed issue, cut by hand from a local checkout after the
+merge. It is a maintainer tool: no user ever runs it and nothing in the plugin
+calls it.
+
+It refuses before it writes anything — a dirty tree, a branch that is not
+`main`, a checkout behind the remote, a tag that already exists locally or on
+the remote, a `manifest.json` that does not parse or whose entry points are
+missing, an empty `[Unreleased]` section, a shell script or QML file that does
+not parse, or a failing test. The ordering is the point: a tag you have to
+delete and re-push is worse than a release that refuses to start, because the
+tag is the thing everyone else has already reacted to.
+
+Then it bumps the version in `manifest.json` — the only place it lives — moves
+the `[Unreleased]` entries under a new dated heading, commits, tags `vX.Y.Z`,
+and pushes the commit before the tag: a remote holding a tag whose commit it
+has not got is broken in a way nobody can fix by pulling. Last it pushes both
+to `gitea`, best-effort, printing the re-push command if that fails. The
+release exists once the tag is at `origin`, so an unreachable mirror is a
+re-push rather than a re-tag.
+
+The remote names are `OMAIPSUM_RELEASE_REMOTE` (default `origin`) and
+`OMAIPSUM_MIRROR_REMOTE` (default `gitea`) if you ever need to point it
+somewhere else.
+
+Write the changelog entry under `[Unreleased]` as part of the fix. The script
+refusing on an empty section is a backstop, and by then it is much too late to
+remember what the change was for.
+
+## The marketplace
+
+**omaipsum is not on the [Omarchy plugin marketplace][mp] and has not been
+submitted.** The public repository was the prerequisite and it exists; the
+submission is still to do. Nothing in this repository claims a listing, and
+nothing should until one is made.
+
+[mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace
+
+A listing points at **the repository, not a release**, so a reviewer sees
+whatever is on `main` at the moment they look, and so does anyone who follows
+it to `omarchy plugin add`. That is the sharper reason for the branch rule in
+[../AGENTS.md](../AGENTS.md): `main` is the public face, not a workspace.
+
+The submission form is a checklist, and every item on it is a claim about how
+the plugin behaves made to people who cannot check it themselves. Those
+claims, what a static scan of this repository reads, and which capabilities it
+would report are in [../AGENTS.md](../AGENTS.md) under *Publishing* — they
+live there because keeping them true is a constraint on every change, not a
+step in a release. Check them against the code on the day rather than against
+any list.
+
+## What install.sh does to a machine
+
+Both scripts are safe to re-run, and neither writes anything outside
+omaipsum's own directories. Registration goes through Omarchy's own commands
+because they own `~/.config/omarchy/shell.json`; the keybinding is printed
+rather than written, because `~/.config/hypr/bindings.lua` belongs to the
+user. A plugin that rewrites your compositor config is one you have to trust
+twice.
+
+`install.sh`, in order:
+
+1. Symlinks the checkout to `~/.config/omarchy/plugins/cschaba.omaipsum` — a
+   link, not a copy, so the checkout stays the only copy of the code and an
+   edit is live after a shell restart. If that path is a real directory it
+   stops rather than deleting somebody's files: that is an `omarchy plugin
+   add` clone or an older copy-install, and removing it is not this script's
+   call.
+2. Stops if `omarchy` is not on `PATH`, because registering means writing
+   `shell.json`, and that is omarchy's file rather than this script's.
+3. Asks the running shell to rescan its plugins, quietly and best-effort —
+   with no shell running there is nobody to tell, and that is not a failure.
+4. **Waits for the plugin to appear in `omarchy plugin list`**, polling up to
+   forty times at 50ms. `rescanPlugins` is fire-and-forget: the call returns
+   when the shell accepts it, not when the scan has finished. Enabling on the
+   next line asks about a plugin the shell has not read yet and is told it
+   does not exist — which is exactly what a fresh install used to do, silently
+   (#23). `omarchy-plugin-add` has the same problem and polls the same way.
+   If the plugin never turns up, the script says the shell is not running and
+   stops, which is the only case where that diagnosis is the true one.
+5. Asks which bar section to use — `gum choose` over left / center / right,
+   pre-selected to the manifest's `defaultSection`. A non-interactive run, or
+   a machine without `gum`, takes that default without a word, because this
+   script has to stay usable from automation.
+6. Runs `omarchy plugin enable` with that section and then `omarchy bar put`.
+   Reading the real CLI corrected three assumptions worth recording: `bar put`
+   is idempotent and `plugin enable` places the widget as a side effect, so a
+   second run produces one widget and not two; there is no `omarchy bar
+   remove` at all; and `bar put` exits 0 even with no shell running, which is
+   why `enable` goes first, so a failure is visible.
+7. Checks for `wl-copy` and, if it is missing, suggests
+   `omarchy pkg add wl-clipboard`. It installs nothing — no package manager
+   runs from this repository.
+8. Prints the optional keybinding line for you to paste, and says so if the
+   chord already appears in `bindings.lua`.
+9. Reminds you to `omarchy restart shell`, because the shell reads a plugin's
+   QML once at startup.
+
+`uninstall.sh` reverses it: `omarchy plugin disable`, which is the whole way
+back out since there is no `bar remove`; then the symlink, which is removed
+without touching what it points at, and left alone if it turns out to be a
+real directory. `--purge` additionally removes `~/.config/omaipsum` and
+`~/.local/state/omaipsum` — neither of which this version creates, so that a
+version that starts writing there does not also have to remember to teach the
+uninstaller. The keybinding is printed back with its line number for you to
+delete: what the installer could not add, the uninstaller must not remove.
