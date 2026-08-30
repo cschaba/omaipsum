@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The plugin shows itself as "OmaIpsum".
+
 ## [0.1.5] — 2026-08-30
 
 - A third-party apt source being unavailable no longer fails CI.

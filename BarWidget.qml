@@ -542,7 +542,7 @@ Panel {
   function notify(headline, detail, urgency) {
     // The same glyph as the bar icon, so the toast is recognisably from the
     // thing you just clicked rather than from some other document tool.
-    var args = ["omarchy-notification-send", "--app-name", "omaipsum", "-g", "󰰌", "-u", urgency, headline]
+    var args = ["omarchy-notification-send", "--app-name", "OmaIpsum", "-g", "󰰌", "-u", urgency, headline]
     // The description is optional and the parser reads the next positional as
     // one, so an empty string would show as a blank second line.
     if (detail)
@@ -1215,7 +1215,7 @@ Panel {
             id: versionLine
             width: parent.width
             visible: root.version !== ""
-            text: "omaipsum " + root.version
+            text: "OmaIpsum " + root.version
             // Lit only while hovered, and only when there is somewhere to go:
             // a line that looks like a link and is not one is worse than a
             // line that looks like text.

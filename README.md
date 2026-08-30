@@ -1,4 +1,4 @@
-# omaipsum
+# OmaIpsum
 
 Placeholder text from the bar, for [Omarchy 4](https://omarchy.org). Click the
 document icon, pick how much of what you want, read exactly what you are about
