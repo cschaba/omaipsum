@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A narrated screencast in the README, behind a thumbnail.
+
 - AGENTS.md warns that a closing keyword in commit prose closes the issue
   even when the sentence denies it.
 
