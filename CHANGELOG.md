@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-08-30
+
 - Pushing a tag now publishes a GitHub Release with a tarball, its checksum
   and the changelog entry, instead of leaving a bare tag.
 

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "cschaba.omaipsum",
   "name": "omaipsum",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Carsten",
   "license": "MIT",
   "description": "Placeholder text from the bar: six variants, exact counts, one click to copy.",
