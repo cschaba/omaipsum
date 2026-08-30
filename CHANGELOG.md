@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-08-30
+
 - A screenshot in the README, the three new variants documented beside the
   others, and everything the marketplace asks for checked off.
 
