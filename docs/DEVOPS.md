@@ -207,8 +207,20 @@ opening paragraph: they are the same claim in two lengths, and a listing that
 promises something the README does not is the kind of drift a reviewer notices.
 
 The submission itself is a GitHub issue form wanting the repository link, a
-category and tags. Suggested: category **Utilities**; tags *lorem ipsum*,
-*placeholder text*, *bar widget*, *clipboard*.
+category and tags — both are fixed dropdowns, not free text, which is worth
+knowing before drafting anything. The categories are Appearance, Desktop,
+Developer Tools, Hardware, Productivity, System, Widgets and Other; **Widgets**
+is the honest one for a bar widget. The tags come from a fixed list too, and
+**a submission with more than three is rejected** — of AI, Bar, Games,
+Hyprland, Launcher, Media, Power management, Quickshell, Security, System and
+Workspaces, the two that actually describe this are **Bar** and **Quickshell**.
+
+The form also asks for maintainer notes and five required checkboxes: the repo
+is public with install and removal instructions; the licence and external
+dependencies are documented; the submitter owns the plugin and its preview
+assets; the plugin does not overwrite user configuration without explicit
+consent; and the submitter understands approval is a listing decision and not a
+security review.
 
 Validation runs automatically against the current commit before a maintainer
 looks at it — which is the concrete reason `main` has to stay releasable rather

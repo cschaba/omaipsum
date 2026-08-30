@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- DEVOPS.md describes the marketplace submission form as it actually is.
+
 ## [0.1.7] — 2026-08-30
 
 - The product name is written OmaIpsum in the docs, while ids, paths and
