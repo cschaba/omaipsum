@@ -133,7 +133,12 @@ the code, the releases and CI live. `gitea`, at
 mirror — pushed to and never worked in. `scripts/release.sh` pushes there
 second and best-effort, once the release already exists at `origin`.
 
-**Issues and pull requests stay on Gitea.** Only the code moved.
+**Issues live on GitHub too**, since #20. They were on Gitea until then, and
+came across keeping their original numbers — GitHub had no issues and no pull
+requests, so it numbered from 1 and the nineteen matched. That mattered because
+every commit closes its issue with `Fixes #N`; had the numbers shifted, the
+whole history would point at the wrong issues. Gitea still holds its copy, but
+nothing mirrors issues between the two, so that copy is frozen history.
 
 The project started the other way round, so the reason for the swap belongs
 here rather than in a commit nobody re-reads. The Gitea instance has no Actions
@@ -146,13 +151,8 @@ a reviewer and then anyone running `omarchy plugin add` follows the listing
 straight to that repository. The code had to be where those three things
 already pointed.
 
-The tracker stayed because eighteen issues of history are on it, and moving
-them would renumber them and break every `Fixes #N` already written.
-
-That split is unusual enough to be worth repeating wherever someone might trip
-on it: a public repository whose issue tracker is somewhere else. AGENTS.md
-says the same thing, and it is why `Fixes #N` in a commit renders as a dead
-link on GitHub while still closing the issue on Gitea.
+`Fixes #N` therefore resolves on GitHub the way it always did on Gitea, which
+was the point of moving the issues rather than leaving them.
 
 ## CI
 

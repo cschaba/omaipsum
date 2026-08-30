@@ -29,34 +29,25 @@ changelog.
 
 ## Where it lives
 
-**The code and the issues live in different places, on purpose.**
+**Everything lives on GitHub**: `origin`, `git@github.com:cschaba/omaipsum.git`,
+public — code, issues, releases and CI. Gitea, at
+`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, is a private mirror:
+pushed to, never worked in.
 
-| | |
-|---|---|
-| Code, releases, CI | GitHub — `origin`, `git@github.com:cschaba/omaipsum.git`, public |
-| Issues, pull requests | Gitea — `gitea`, `ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, private |
+The project started the other way round, and the reason for the swap is worth
+keeping. The Gitea instance has no Actions runner, so a workflow committed
+there could never run, and CI that cannot run is not CI. GitHub has runners; it
+was already the address `manifest.json` gave as the homepage and the one the
+README told people to clone, because a private instance is no use to somebody
+installing a plugin; and a marketplace listing points at a repository rather
+than a release. The code had to be where all three of those already pointed.
 
-This reverses what the project started with, and the reason is worth keeping:
-the Gitea instance has no Actions runner, so a workflow committed there could
-never run. CI that cannot run is not CI. GitHub has runners, it is the public
-address `manifest.json` already gives as the homepage and the README already
-tells people to clone, and a marketplace listing points at a repository rather
-than a release — so the code had to be where all three of those things already
-pointed.
-
-Gitea keeps the tracker because that is where eighteen issues of history are,
-and moving them would renumber them and break every `Fixes #N` already written.
-
-CI therefore lives in `.github/workflows`. Gitea is now the mirror — pushed to,
-never worked in.
-
-**Say where the issues are, wherever someone might look for them.** A public
-repository whose tracker is somewhere else is an unusual arrangement, and the
-first person to want to report something will look on GitHub and find nothing.
-
-The `tea` CLI on the development machine authenticates as `omarchy-ai`. It
-needs write access to `carsten/omaipsum`, or every issue and pull request
-command answers `not found`.
+The issues followed the code (#20) rather than staying behind. Leaving them
+would have left every `Fixes #N` in the history rendering as a dead link on the
+public repository. GitHub had no issues and no pull requests yet, so numbering
+started at 1 and the nineteen came across on their original numbers — which is
+the only reason this was safe to do at all. Gitea keeps its copy; nothing
+mirrors issues, so treat that copy as frozen history and file everything here.
 
 ## omapass is the reference
 
@@ -116,12 +107,9 @@ Authored `Carsten <carsten@s10r.de>`, with a `Co-Authored-By: Claude` trailer
 where that applies. Close issues with `Fixes #N` in the body — Gitea resolves
 it against its own tracker when the mirror receives the push.
 
-Note what that costs on GitHub: `#N` there renders as a link to a GitHub issue
-that does not exist, because the tracker is on Gitea. The eighteen commits
-already carrying such a line cannot be fixed — that history is published. Keep
-writing the bare `Fixes #N` anyway: it is what actually closes the issue, and a
-full URL in every commit body to buy a working link on the mirror is a poor
-trade. Say *why* the
+Since #20 the tracker is on GitHub, so those references resolve where the code
+is. They did not always: the issues came across from Gitea precisely so the
+`Fixes #N` already written would keep pointing at the right thing. Say *why* the
 change is what it is — the diff already shows what changed.
 
 ## Issues
