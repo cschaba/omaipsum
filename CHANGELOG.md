@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The bar icon is an L in a square frame, and the copy notification uses the
+  same glyph.
+
 - Copying twice in a row no longer claims the second copy failed when it
   succeeded.
 
