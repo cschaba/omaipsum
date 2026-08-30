@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The version at the foot of the panel is a link to the project homepage,
+  with a tooltip showing where it goes.
+
 ## [0.1.1] — 2026-08-30
 
 - Pushing a tag now publishes a GitHub Release with a tarball, its checksum
