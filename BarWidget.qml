@@ -337,26 +337,43 @@ Panel {
     // The pipe does not exist before the child is up. Closing stdin afterwards
     // is the EOF that makes wl-copy stop reading and fork — left open, it waits
     // there forever and nothing reaches the clipboard.
+    // Set the moment wl-copy has taken the text. After that its exit says
+    // nothing about whether the copy worked — see onExited.
+    property bool handedOff: false
+
     onStarted: {
       copyProc.write(copyProc.pendingText)
       copyProc.pendingText = ""
       copyProc.stdinEnabled = false
-      // Closing here rather than in copyCurrent(): the pulldown disappearing is
-      // the first acknowledgement the user gets, so it has to mean the child is
-      // actually up and holding the text. The Process is a child of root, not
-      // of the panel, so nothing is torn down underneath this write.
+      copyProc.handedOff = true
+      // The copy is done here, not at exit. wl-copy does not exit when it
+      // succeeds: it takes the text, forks, and stays alive owning the
+      // selection until something else claims it. So this is both the moment
+      // to close the panel — the pulldown disappearing is the user's first
+      // acknowledgement, and it has to mean the child is up and holding the
+      // text — and the moment to say so.
       root.close()
+      root.notify(copyProc.headline, copyProc.detail, "low")
     }
 
     onExited: function (exitCode) {
-      if (exitCode === 0) {
-        root.notify(copyProc.headline, copyProc.detail, "low")
+      // An exit after the handoff is wl-copy giving up the selection, which
+      // is what it does when the next copy supersedes it — including the next
+      // copy from this very widget, which reuses this Process and tears the
+      // previous run down. Reporting that as a failure accused a copy that had
+      // already succeeded, every second time anyone used it.
+      //
+      // The trade: a real failure after a successful handoff now goes
+      // unreported. That case is rare and indistinguishable from a supersede,
+      // while the false alarm fired on ordinary use and taught the user to
+      // stop believing the toast.
+      if (copyProc.handedOff)
         return
-      }
-      // The panel closed on start, so there is no longer anywhere on screen to
-      // put this. Silence would be the worst outcome the widget has — the user
-      // pastes whatever was on the clipboard before and finds out much later —
-      // so a failure that got this far goes out as a critical toast.
+      // Before the handoff there is no ambiguity: wl-copy started and died
+      // without taking the text. The panel has not closed yet either, but the
+      // toast is still worth sending, because silence here is the worst
+      // outcome the widget has — the user pastes whatever was there before and
+      // finds out much later.
       root.notify("Nothing was copied", "wl-copy exited with " + exitCode, "critical")
     }
 
@@ -412,6 +429,10 @@ Panel {
     // Redundant for the words unit, where the headline already carries the
     // number; useful for the other two, where nobody can count a paragraph.
     copyProc.detail = root.unit === "words" ? "" : root.previewWords + (root.previewWords === 1 ? " word" : " words")
+    // Cleared per run for the same reason stdinEnabled is armed per run: both
+    // are left in their end-of-run state, and a handedOff that stayed true
+    // would make every copy after the first unable to report a real failure.
+    copyProc.handedOff = false
     // onStarted turns this off after writing and it stays off, so every run has
     // to arm it again or the second copy gets no pipe at all.
     copyProc.stdinEnabled = true
