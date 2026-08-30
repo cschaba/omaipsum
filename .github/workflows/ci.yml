@@ -1,14 +1,14 @@
 # omaipsum CI — four jobs, ported from omapass's .github/workflows/ci.yml.
 #
-# The location is the difference: Gitea is home (AGENTS.md, "Where it lives"),
-# so the workflow lives in .gitea/workflows. omapass's file is the template for
-# the *jobs*, not for the directory.
+# This lived in .gitea/workflows until #19. The Gitea instance has no Actions
+# runner, so it never ran there and could not; the code moved to GitHub and the
+# workflow came home.
 #
 # --- why there is no scripts/check.sh -----------------------------------------
 #
-# Issue #10 says that if this Gitea instance turns out to have no Actions
-# runner, the same checks belong in a local scripts/check.sh instead. They
-# already do, in two places, and neither needs a server:
+# Issue #10 says that with no Actions runner the same checks belong in a local
+# scripts/check.sh instead. They already do, in two places, and neither needs a
+# server — which is what kept the project honest while CI could not run at all:
 #
 #   tests/smoke.sh   parses every shell script with `bash -n`, parses every
 #                    QML file with qmlformat, and validates manifest.json.

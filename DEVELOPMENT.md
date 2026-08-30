@@ -19,7 +19,7 @@ expected to follow.
 | `scripts/release.sh` | cuts a release, or refuses before writing anything |
 | `tests/smoke.sh` | everything that is not the generator |
 | `tests/generator.sh` | `Ipsum.js`, exercised under node |
-| `.gitea/workflows/ci.yml` | the four CI jobs |
+| `.github/workflows/ci.yml` | the four CI jobs |
 | `README.md` | for people using omaipsum rather than working on it |
 | `AGENTS.md` | the conventions, the Omarchy API table, the Quickshell traps |
 | `CLAUDE.md` | a pointer at `AGENTS.md`, and nothing else |
@@ -127,28 +127,37 @@ branch is a one-line addition to it.
 
 ## Where the code lives
 
-`origin` is `ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, and that is
-where work happens: branches are pushed there, issues are filed there, pull
-requests are opened and merged there. Nothing is developed elsewhere and copied
-over afterwards.
+`origin` is `git@github.com:cschaba/omaipsum.git`, public, and that is where
+the code, the releases and CI live. `gitea`, at
+`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, is private and is the
+mirror — pushed to and never worked in. `scripts/release.sh` pushes there
+second and best-effort, once the release already exists at `origin`.
 
-That Gitea instance is private, and a plugin nobody can clone is not a plugin
-anyone can install. So there is a second remote, `github`, at
-`git@github.com:cschaba/omaipsum.git`, and it is public. It is the address
-`manifest.json` gives as its homepage and the one the README tells people to
-clone, and it is what a marketplace listing would point at — the marketplace
-lists **a repository, not a release**, so a reviewer, and then anyone running
-`omarchy plugin add`, follows the listing straight to the repository.
+**Issues and pull requests stay on Gitea.** Only the code moved.
 
-The mirror is pushed to and never worked in. Issues and pull requests do not
-move with it, and `scripts/release.sh` pushes there second and best-effort,
-once the release already exists at `origin`.
+The project started the other way round, so the reason for the swap belongs
+here rather than in a commit nobody re-reads. The Gitea instance has no Actions
+runner. A workflow committed there could never run, and CI that cannot run is
+not CI — it is a file that looks like a promise. GitHub has runners; it is also
+the address `manifest.json` already gave as its homepage and the one the README
+already told people to clone, because a private instance is no use to someone
+installing a plugin. The marketplace lists **a repository, not a release**, so
+a reviewer and then anyone running `omarchy plugin add` follows the listing
+straight to that repository. The code had to be where those three things
+already pointed.
+
+The tracker stayed because eighteen issues of history are on it, and moving
+them would renumber them and break every `Fixes #N` already written.
+
+That split is unusual enough to be worth repeating wherever someone might trip
+on it: a public repository whose issue tracker is somewhere else. AGENTS.md
+says the same thing, and it is why `Fixes #N` in a commit renders as a dead
+link on GitHub while still closing the issue on Gitea.
 
 ## CI
 
-`.gitea/workflows/ci.yml`, not `.github/workflows`: Gitea is home, and
-omapass's workflow was the template for the *jobs* rather than for the
-directory. Four of them run on every push to `main` and every pull request:
+`.github/workflows/ci.yml`. Four jobs run on every push to `main` and every
+pull request:
 
 | Job | |
 |-----|--|
@@ -168,11 +177,12 @@ import as an error, so it rejects every file here regardless of syntax.
 `qmllint -I /usr/share/omarchy/shell *.qml` locally for the type checking CI
 cannot do.
 
-It is **not confirmed that this Gitea instance has an Actions runner**, and the
-failure mode is quiet: a job whose `runs-on` label no runner claims does not
-fail, it queues, and the run sits pending forever. If runs appear but never
-start, check the label before the steps. Nothing depends on the answer, which
-is why there is no `scripts/check.sh`: `tests/smoke.sh` already parses every
+If a run ever appears but never starts, check the `runs-on` label before the
+steps: a job no runner claims does not fail, it queues, and sits pending
+forever. That quiet failure is what the Gitea instance would have given us —
+it has no runner at all, which is why the code moved to GitHub in #19.
+
+There is still no `scripts/check.sh`, and the reason survives the move: `tests/smoke.sh` already parses every
 script and every QML file and validates the manifest from any checkout, and
 `scripts/release.sh` runs all of that plus the whole suite and refuses to write
 if any of it fails. What CI adds over those two is shellcheck, and running the

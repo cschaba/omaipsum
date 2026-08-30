@@ -40,17 +40,15 @@ cd "$ROOT" || exit 1
 MANIFEST="$ROOT/manifest.json"
 CHANGELOG="$ROOT/CHANGELOG.md"
 
-# Gitea is home; GitHub is a mirror (DEVELOPMENT.md, "Where the code lives").
-# The release is *made* at origin — that is where the branch, the issues and
-# the pull requests are, and it is the remote this script insists on being in
-# step with before it writes anything. The mirror is pushed to, never worked
-# in, so it is pushed second and best-effort: once the tag is at home the
-# release exists, and a mirror that is briefly behind is a re-push, not a
-# broken release. The marketplace listing points at the mirror's repository
-# rather than a release, so what the mirror owes the world is an up-to-date
-# main; the tag goes along for completeness.
+# GitHub is where the code lives; Gitea is the mirror and the issue tracker
+# (DEVELOPMENT.md, "Where the code lives"). The release is *made* at origin,
+# because that is what the marketplace listing points at and what CI runs on,
+# and it is the remote this script insists on being in step with before it
+# writes anything. The mirror is pushed second and best-effort: once the tag is
+# at origin the release exists, and a mirror briefly behind is a re-push rather
+# than a broken release.
 REMOTE="${OMAIPSUM_RELEASE_REMOTE:-origin}"
-MIRROR="${OMAIPSUM_MIRROR_REMOTE:-github}"
+MIRROR="${OMAIPSUM_MIRROR_REMOTE:-gitea}"
 
 DRY_RUN=0
 MISSING_TESTS=0
@@ -85,13 +83,13 @@ scripts/release.sh <major|minor|patch|X.Y.Z> [--dry-run]
 
   Then: bumps the version in manifest.json, moves the [Unreleased] entries
   under a new dated heading in CHANGELOG.md, commits, tags vX.Y.Z, pushes
-  the commit and then the tag to the Gitea origin, and mirrors both to
-  GitHub if that remote is configured.
+  the commit and then the tag to the GitHub origin, and mirrors both to
+  Gitea if that remote is configured.
 
   --dry-run prints every one of those steps, in order, and writes nothing.
 
   Environment: OMAIPSUM_RELEASE_REMOTE (default origin),
-               OMAIPSUM_MIRROR_REMOTE (default github).
+               OMAIPSUM_MIRROR_REMOTE (default gitea).
 USAGE
 }
 

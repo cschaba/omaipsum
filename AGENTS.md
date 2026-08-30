@@ -16,7 +16,7 @@ selector over words, sentences and paragraphs.
 pulldown, `Ipsum.js` generates the text, `corpora/` holds the three variants as
 data, `install.sh` and `uninstall.sh` register it with Omarchy through
 Omarchy's own commands, `scripts/release.sh` cuts a release, `tests/` covers
-both halves and `.gitea/workflows/ci.yml` runs the checks on every push.
+both halves and `.github/workflows/ci.yml` runs the checks on every push.
 [README.md](README.md) describes it for someone using it;
 [DEVELOPMENT.md](DEVELOPMENT.md) describes the code.
 
@@ -29,16 +29,30 @@ changelog.
 
 ## Where it lives
 
-**Gitea is home.** `origin` is
-`ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, and every change, issue
-and pull request goes there first. That instance is private, so there is a
-second remote: `github`, at `git@github.com:cschaba/omaipsum.git`, public. It
-is the address `manifest.json` gives as the homepage and the one the README
-tells people to clone, and it is a mirror — pushed to, never worked in. Issues
-and pull requests do not move with it.
+**The code and the issues live in different places, on purpose.**
 
-CI therefore belongs in `.gitea/workflows`. omapass keeps its workflows under
-`.github/workflows`; those are a template for the *jobs*, not for the location.
+| | |
+|---|---|
+| Code, releases, CI | GitHub — `origin`, `git@github.com:cschaba/omaipsum.git`, public |
+| Issues, pull requests | Gitea — `gitea`, `ssh://gitea@gitea.s10r.de:2811/carsten/omaipsum.git`, private |
+
+This reverses what the project started with, and the reason is worth keeping:
+the Gitea instance has no Actions runner, so a workflow committed there could
+never run. CI that cannot run is not CI. GitHub has runners, it is the public
+address `manifest.json` already gives as the homepage and the README already
+tells people to clone, and a marketplace listing points at a repository rather
+than a release — so the code had to be where all three of those things already
+pointed.
+
+Gitea keeps the tracker because that is where eighteen issues of history are,
+and moving them would renumber them and break every `Fixes #N` already written.
+
+CI therefore lives in `.github/workflows`. Gitea is now the mirror — pushed to,
+never worked in.
+
+**Say where the issues are, wherever someone might look for them.** A public
+repository whose tracker is somewhere else is an unusual arrangement, and the
+first person to want to report something will look on GitHub and find nothing.
 
 The `tea` CLI on the development machine authenticates as `omarchy-ai`. It
 needs write access to `carsten/omaipsum`, or every issue and pull request
@@ -99,7 +113,15 @@ the fix, not afterwards.
 ## Commits
 
 Authored `Carsten <carsten@s10r.de>`, with a `Co-Authored-By: Claude` trailer
-where that applies. Close issues with `Fixes #N` in the body. Say *why* the
+where that applies. Close issues with `Fixes #N` in the body — Gitea resolves
+it against its own tracker when the mirror receives the push.
+
+Note what that costs on GitHub: `#N` there renders as a link to a GitHub issue
+that does not exist, because the tracker is on Gitea. The eighteen commits
+already carrying such a line cannot be fixed — that history is published. Keep
+writing the bare `Fixes #N` anyway: it is what actually closes the issue, and a
+full URL in every commit body to buy a working link on the mirror is a poor
+trade. Say *why* the
 change is what it is — the diff already shows what changed.
 
 ## Issues
@@ -269,15 +291,15 @@ the root README.
 `fixtures/`, `coverage/`, `node_modules/`.
 
 In this repository that means `install.sh`, `uninstall.sh`,
-`scripts/release.sh`, `Ipsum.js`, `BarWidget.qml`, `.gitea/workflows/ci.yml`
-and `README.md` are read; `tests/` is not, and neither are the corpora, which
-are `.json`. There is no `bin/` and no `lib/` here. Worth knowing before
-adding anything that shells out, invokes a package manager, or asks for
-`sudo`.
+`scripts/release.sh`, `Ipsum.js`, `BarWidget.qml` and `README.md` are read;
+`tests/` is not, `.github/` is not, and neither are the corpora, which are
+`.json`. There is no `bin/` and no `lib/` here. Worth knowing before adding
+anything that shells out, invokes a package manager, or asks for `sudo`.
 
-Note that the exclusion list names `.github/` and not `.gitea/`, and omaipsum's
-workflow lives in the latter — so the CI file is read like any other source
-file, and what it does counts.
+The exclusion list names `.github/`, which is where the workflow now lives, so
+the CI file is not read. It was in `.gitea/workflows` until #19 and was read
+there — worth remembering if it ever moves back, because what a scanned CI file
+does counts the same as what a shipped script does.
 
 ### Capabilities it will flag
 
@@ -286,15 +308,17 @@ These are detected and reported to the reviewer. Of omaipsum:
 - `installer` — `install.sh`, `uninstall.sh` and `scripts/release.sh`.
 - `remote-build` — the `git clone` and the `omarchy plugin add <url>` in the
   README.
-- `privilege` and `package-manager` — **not from the plugin.** Nothing in it
-  runs `sudo` or a package manager. `install.sh` prints
+- `privilege` and `package-manager` — **neither, now.** Nothing in the plugin
+  runs `sudo` or a package manager: `install.sh` prints
   `omarchy pkg add wl-clipboard` when `wl-copy` is missing and installs
-  nothing; the widget execs exactly two binaries, `wl-copy` and
-  `omarchy-notification-send`. What does install packages is
-  `.gitea/workflows/ci.yml`, which sets up a runner with `sudo apt-get
-  install` — and by the rules above it is read, so a scan may well report both
-  from there. If it does, that is where they come from, and it is a CI file
-  rather than anything a user installs.
+  nothing, and the widget execs exactly two binaries, `wl-copy` and
+  `omarchy-notification-send`. The one file that does install packages is the
+  CI workflow, with its `sudo apt-get install` — and moving it from
+  `.gitea/workflows` to `.github/workflows` took it out of the scan, because
+  the exclusion list names `.github/` and did not name `.gitea/`. That was a
+  side effect of needing a runner rather than the reason for the move, but it
+  is the honest current position: a scan of this repository should report
+  neither capability.
 
 A **new** capability appearing in a diff means the plugin started doing
 something categorically different, and deserves a second look before it ships.
