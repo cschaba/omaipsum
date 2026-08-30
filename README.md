@@ -8,6 +8,10 @@ developers, anyone writing a template.
 
 ![The omaipsum pulldown: a variant picker, a count, words/sentences/paragraphs, and a live preview](docs/pulldown.png)
 
+[![Watch a minute of omaipsum: picking a variant, setting a count, and pasting the result into an editor](docs/screencast-thumb.png)](docs/screencast.mp4)
+
+*A minute of it working, with narration — GitHub plays it in the file view.*
+
 Six text variants ship with it: the Latin one everybody knows, and five that
 are easier to read past. You choose words, sentences or paragraphs, and you get
 exactly the number you asked for.
