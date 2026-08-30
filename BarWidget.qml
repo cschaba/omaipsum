@@ -905,6 +905,17 @@ Panel {
             accent: Color.accent
             fontFamily: root.fontFamily
             hasCursor: root.cursorActive && root.focusSection === "variant"
+            // Dropdown takes the keyboard when its popup opens and never gives
+            // it back: selectCurrent() closes the popup and restores nothing.
+            // Picking with the keyboard survives that, because focus falls back
+            // to the catcher it came from — but clicking the trigger runs
+            // trigger.forceActiveFocus() first, so after a mouse pick the focus
+            // sits on the trigger and ⏎ stops copying. Take it back whenever the
+            // popup closes, which covers cancelling as well as choosing.
+            onPopupOpenChanged: {
+              if (!variantPicker.popupOpen && root.opened)
+                keyCatcher.forceActiveFocus()
+            }
             onChanged: function (value) {
               root.variantId = value
               root.variantChosen = true
