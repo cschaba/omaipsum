@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Copying twice in a row no longer claims the second copy failed when it
+  succeeded.
+
 - AGENTS.md and DEVELOPMENT.md describe omaipsum rather than the project
   they were copied from.
 
