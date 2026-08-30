@@ -134,6 +134,13 @@ Authored `Carsten <carsten@s10r.de>`, with a `Co-Authored-By: Claude` trailer
 where that applies. Close issues with `Fixes #N` in the body — Gitea resolves
 it against its own tracker when the mirror receives the push.
 
+**Never write a closing keyword anywhere else in the message, not even to deny
+it.** GitHub matches `close`/`fix`/`resolve` followed by `#N` wherever it
+appears and does not read the sentence around it. A commit explaining that it
+"does not close #29" closed #29. If a body needs to mention an issue it is not
+finishing, write `Refs #N` and say the rest without the verb — "#29 stays open
+because …".
+
 Since #20 the tracker is on GitHub, so those references resolve where the code
 is. They did not always: the issues came across from Gitea precisely so the
 `Fixes #N` already written would keep pointing at the right thing. Say *why* the
