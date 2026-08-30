@@ -6,12 +6,9 @@ to get, and copy it. It is for anyone who fills a layout with filler text often
 enough to be tired of opening a website for it — designers, front-end
 developers, anyone writing a template.
 
-<!-- SCREENSHOT: the pulldown, open, with a preview in it.
-     Goes at docs/pulldown.png and is referenced from here as
-     ![The omaipsum pulldown](docs/pulldown.png)
-     Not linked yet, because the file does not exist. -->
+![The omaipsum pulldown: a variant picker, a count, words/sentences/paragraphs, and a live preview](docs/pulldown.png)
 
-Three text variants ship with it: the Latin one everybody knows, and two that
+Six text variants ship with it: the Latin one everybody knows, and five that
 are easier to read past. You choose words, sentences or paragraphs, and you get
 exactly the number you asked for.
 
@@ -137,6 +134,9 @@ text, and past what anyone pastes as placeholder.
 | **Classic** | The original Latin filler, lifted from a 45 BC essay on ethics | Latin vocabulary from Cicero, *De finibus bonorum et malorum* (45 BC), the text the standard lorem ipsum passage was garbled out of. Cicero died in 43 BC and the work is in the public domain worldwide by age; no licence applies. |
 | **Bacon** | Cuts, cures and cooking heat, for people who read menus instead of filler | Word pool written from scratch for omaipsum in the style of the "meat ipsum" genre. Nothing was copied from baconipsum.com or any other generator: these are ordinary English butchery and cooking terms. Original to this project and covered by this repository's licence. |
 | **Corporate** | Consultancy buzzwords that align, leverage and circle back to nothing | Word pool written from scratch for omaipsum in the style of the corporate-jargon ipsum genre. No list was copied from any generator; these are ordinary business-speak terms. Original to this project and covered by this repository's licence. |
+| **Space Opera** | Hyperdrives, smugglers and blaster fire, with the serial numbers filed off in a galaxy legal counsel could not name | Word pool written from scratch for omaipsum in the style of the space-opera genre. Ordinary English science-fiction vocabulary only: no character names, place names or invented terms from any film, book or series, and no list was copied from any generator, wiki or fan site. Original to this project and covered by this repository's licence. |
+| **High Fantasy** | Oaths, barrows and doomed fellowships, for copy that walks the whole way when it could have taken a horse | Word pool written from scratch for omaipsum in the style of the high-fantasy genre. Ordinary English words drawn from medieval and folkloric vocabulary that long predates any modern novel: no character names, place names or authors' invented terms, and no list was copied from any generator, wiki or fan site. Original to this project and covered by this repository's licence. |
+| **Sitcom** | Recliners, casseroles and a laugh track, for filler that resolves everything in twenty-two minutes | Word pool written from scratch for omaipsum in the style of the suburban-sitcom genre. Ordinary English domestic and television vocabulary only: no character names, catchphrases or material from any series, and no list was copied from any generator, wiki or fan site. Original to this project and covered by this repository's licence. |
 
 ### Adding your own
 

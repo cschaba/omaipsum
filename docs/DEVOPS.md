@@ -103,12 +103,43 @@ remember what the change was for.
 
 ## The marketplace
 
-**omaipsum is not on the [Omarchy plugin marketplace][mp] and has not been
-submitted.** The public repository was the prerequisite and it exists; the
-submission is still to do. Nothing in this repository claims a listing, and
-nothing should until one is made.
+**omaipsum is not on the [Omarchy plugin marketplace][mp] yet.** Everything it
+asks for is in place; the submission itself is still to do. Nothing in this
+repository claims a listing, and nothing should until one is made.
 
 [mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace
+
+### What it requires, and where each one is
+
+Checked against [the publishing docs](https://omarchyplugins.com/publish.html):
+
+| Requirement | Where |
+|---|---|
+| Public GitHub repository | `cschaba/omaipsum` |
+| Valid `manifest.json` at the root, with all eight mandatory fields | `schemaVersion`, `id`, `name`, `version`, `author`, `description`, `kinds`, `entryPoints` |
+| README and licence | [../README.md](../README.md), [../LICENSE](../LICENSE) — MIT |
+| Safe install and removal | [../install.sh](../install.sh), [../uninstall.sh](../uninstall.sh) |
+| Namespaced id | `cschaba.omaipsum` |
+| Preview image (optional) | [pulldown.png](pulldown.png) |
+
+`description` in the manifest is the marketplace summary, so it is the one
+string that has to read well out of context. Keep it in step with the README's
+opening paragraph: they are the same claim in two lengths, and a listing that
+promises something the README does not is the kind of drift a reviewer notices.
+
+The submission itself is a GitHub issue form wanting the repository link, a
+category and tags. Suggested: category **Utilities**; tags *lorem ipsum*,
+*placeholder text*, *bar widget*, *clipboard*.
+
+Validation runs automatically against the current commit before a maintainer
+looks at it — which is the concrete reason `main` has to stay releasable rather
+than merely eventually correct.
+
+Worth being clear-eyed about what the marketplace does and does not do: it
+validates the listing, not the plugin. Plugins run unsandboxed. Everything that
+makes omaipsum safe to install is a property of this repository — it writes
+nothing outside its own directories, runs no package manager, needs no
+privileges — and not of anyone's review.
 
 A listing points at **the repository, not a release**, so a reviewer sees
 whatever is on `main` at the moment they look, and so does anyone who follows
