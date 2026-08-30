@@ -426,7 +426,7 @@ jobs:
           SHA: ${{ steps.package.outputs.sha }}
 
       # --verify-tag so a typo cannot make gh create the tag it was supposed to
-      # be publishing. The title is `omaipsum X.Y.Z`, which is what the tags
+      # be publishing. The title is `OmaIpsum X.Y.Z`, which is what the tags
       # page could not give us and what #28 asked for.
       - name: Publish
         env:
@@ -438,7 +438,7 @@ jobs:
           tag="${{ steps.version.outputs.tag }}"
           gh release create "$tag" \
             --verify-tag \
-            --title "omaipsum $version" \
+            --title "OmaIpsum $version" \
             --notes-file dist/release-notes.md \
             "dist/omaipsum-$version.tar.gz" \
             "dist/omaipsum-$version.tar.gz.sha256"
