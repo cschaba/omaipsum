@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The code lives on GitHub now, with CI that can actually run; Gitea is the
+  mirror and keeps the issue tracker.
+
 - The variant name on the trigger no longer keeps showing a variant the
   panel has stopped generating.
 
