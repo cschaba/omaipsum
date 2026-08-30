@@ -772,6 +772,13 @@ Panel {
         if (event.key === Qt.Key_Escape && countField.field.activeFocus) {
           keyCatcher.forceActiveFocus()
           event.accepted = true
+        } else if (event.key === Qt.Key_Backspace && root.countBuffer !== "" && !countField.field.activeFocus) {
+          // A typed count is an input field with no cursor in it, so it has to
+          // behave like one: backspace rubs out the last digit rather than the
+          // whole number. Esc still clears it outright — mistyping the second
+          // digit of a two-digit count should not cost you the first.
+          root.countBuffer = root.countBuffer.slice(0, -1)
+          event.accepted = true
         } else if (event.key === Qt.Key_PageDown) {
           root.scrollPreview(previewBox.height * 0.8)
           event.accepted = true
@@ -1111,7 +1118,7 @@ Panel {
               // colour also lets it say what will resolve it, which is the
               // point — a `12` on screen has to explain why the next keystroke
               // did something surprising.
-              text: root.countBuffer !== "" ? root.countBuffer + "… · w/s/p picks the unit · ⏎ copies at that count · esc clears the count" : "j/k move · h/l change · space pick · 4w count · r new sample · ⏎ copy · esc close"
+              text: root.countBuffer !== "" ? root.countBuffer + "… · w/s/p picks the unit · ⏎ copies at that count · bksp rubs out a digit · esc clears" : "j/k move · h/l change · space pick · 4w count · r new sample · ⏎ copy · esc close"
               color: root.countBuffer !== "" ? Color.accent : root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption

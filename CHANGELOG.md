@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Backspace rubs out the last digit of a typed count instead of only Esc
+  clearing the whole thing.
+
 - Return copies again after picking a variant with the mouse.
 
 - The docs are split by audience — user, developer, devops, architecture —
