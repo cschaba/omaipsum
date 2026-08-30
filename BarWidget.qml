@@ -119,8 +119,10 @@ Panel {
     // one file at a time and in whatever order the reads finish, so without
     // this the opening selection would be whichever file the disk returned
     // first, which is not the same variant twice running.
-    if (!root.variantChosen)
+    if (!root.variantChosen) {
       root.variantId = root.preferredVariantId()
+      root.syncVariantPicker()
+    }
   }
 
   function rejectCorpus(fileName) {
@@ -190,9 +192,25 @@ Panel {
   // widget exists to be opened, grabbed from and dismissed, so carrying the
   // last session's unit into the next one would make the configured default
   // mean nothing after the first use.
+  // Dropdown's selectCurrent() assigns its own `value` directly, and assigning
+  // to a bound property destroys the binding — so `value: root.variantId`
+  // survives exactly until the first time someone picks a variant. After that
+  // the trigger shows whatever was last clicked, no matter what variantId
+  // says. This is the same trap NumberField sets, for the same reason the
+  // count has to be pushed back in setCount(): a binding into a control the
+  // user can also drive is a binding that will be gone by the second
+  // interaction. Anything that moves variantId behind the user's back has to
+  // push it too, or the label ends up describing a variant the panel is no
+  // longer generating.
+  function syncVariantPicker() {
+    if (variantPicker && variantPicker.value !== root.variantId)
+      variantPicker.value = root.variantId
+  }
+
   function applyDefaults() {
     root.variantChosen = false
     root.variantId = root.preferredVariantId()
+    root.syncVariantPicker()
     root.setUnit(Ipsum.UNITS.indexOf(root.defaultUnit) === -1 ? Ipsum.UNITS[0] : root.defaultUnit)
     root.setCount(root.defaultCount)
   }

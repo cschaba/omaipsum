@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The variant name on the trigger no longer keeps showing a variant the
+  panel has stopped generating.
+
 - Typed counts in the pulldown, vim style: 4w, 2s, 3p, and a bare unit key
   for the count already set.
 
