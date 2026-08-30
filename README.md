@@ -209,6 +209,31 @@ omaipsum is a directory of QML, a JavaScript generator and two shell scripts.
 | [CHANGELOG.md](CHANGELOG.md) | what changed when |
 | [corpora/README.md](corpora/README.md) | the corpus schema for a variant |
 
+## How this was built
+
+omaipsum was written with heavy use of AI: essentially all of the code,
+the tests and the documentation were produced by Claude, working from issues
+and review by a human maintainer who directed the work and made the decisions.
+
+This is worth saying plainly rather than leaving you to infer it. What it means
+in practice, if you are deciding whether to trust it:
+
+- Every change went through the same gate as any other — one issue, one branch,
+  a test suite that runs in CI, and a review before merge.
+- The parts that touch your machine got tested on a real one rather than
+  reasoned about: the plugin was installed, the shell restarted, the pulldown
+  driven with synthetic key and mouse events, and the clipboard read back.
+  Several bugs in this repository were found that way and no other.
+- The reasoning behind the significant decisions is written down in
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — not because a tool produced
+  them, but because a decision you cannot see the reason for is one you cannot
+  safely change.
+
+It reads no files outside its own directories, runs no package manager, and
+needs no privileges; [AGENTS.md](AGENTS.md) states those rules and
+`install.sh` and `uninstall.sh` are short enough to read in a minute. That is
+the better basis for trusting it than who or what typed it.
+
 ## License
 
 MIT — Copyright (c) 2026 omaipsum contributors. The full text is in

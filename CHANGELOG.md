@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The README says plainly that this project was built with AI, and what
+  that does and does not mean for someone deciding to trust it.
+
 - Backspace rubs out the last digit of a typed count instead of only Esc
   clearing the whole thing.
 
