@@ -6,6 +6,7 @@ import QtQuick
 // says nothing in the log.
 import QtQuick.Controls as QQC
 import Qt.labs.folderlistmodel
+import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
@@ -143,6 +144,8 @@ Panel {
 
   property string version: ""
 
+  property string homepage: ""
+
   FileView {
     path: root.pluginDir + "manifest.json"
     // A version nobody can read costs one dim line at the foot of the panel;
@@ -155,6 +158,9 @@ Panel {
     try {
       var manifest = JSON.parse(raw)
       root.version = manifest && manifest.version ? String(manifest.version) : ""
+      // Same reasoning as the version: manifest.json already carries it, and a
+      // URL written twice is a URL that will disagree with itself.
+      root.homepage = manifest && manifest.homepage ? String(manifest.homepage) : ""
     } catch (e) {
       root.version = ""
     }
@@ -510,6 +516,16 @@ Panel {
   // A Process rather than Util.execArgv: detaching is not needed here, and
   // execArgv would put a bash between the widget and the only two binaries it
   // is meant to run.
+  // omarchy-launch-browser rather than xdg-open: it is what Omarchy's own
+  // plugins use, so the link lands in whatever browser the user actually
+  // configured. execDetached because nothing here waits on a browser.
+  function openHomepage() {
+    if (root.homepage === "")
+      return
+    Quickshell.execDetached(["omarchy-launch-browser", root.homepage])
+    root.close()
+  }
+
   function notify(headline, detail, urgency) {
     // The same glyph as the bar icon, so the toast is recognisably from the
     // thing you just clicked rather than from some other document tool.
@@ -1174,13 +1190,43 @@ Panel {
           // of its own. Not gated on hasCorpora — a panel that is all failure
           // message is exactly when someone wants the version number.
           Text {
+            id: versionLine
             width: parent.width
             visible: root.version !== ""
             text: "omaipsum " + root.version
-            color: root.dim
+            // Lit only while hovered, and only when there is somewhere to go:
+            // a line that looks like a link and is not one is worse than a
+            // line that looks like text.
+            color: versionHover.containsMouse && root.homepage !== "" ? Color.accent : root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
+            font.underline: versionHover.containsMouse && root.homepage !== ""
             horizontalAlignment: Text.AlignRight
+
+            MouseArea {
+              id: versionHover
+              // Only the text is clickable, not the full width of the row —
+              // the Text fills the panel to keep the label right-aligned, and
+              // a click target stretching across empty space would fire on
+              // presses nowhere near anything that looks pressable.
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              width: parent.contentWidth
+              height: parent.contentHeight
+              hoverEnabled: true
+              enabled: root.homepage !== ""
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.openHomepage()
+
+              PanelToolTip {
+                visible: versionHover.containsMouse && root.homepage !== ""
+                // The URL is in the tooltip on purpose: this opens a browser,
+                // and being told where before you click is the difference
+                // between an affordance and a surprise.
+                text: "Open the project homepage\n" + root.homepage
+                fontFamily: root.fontFamily
+              }
+            }
           }
         }
       }
