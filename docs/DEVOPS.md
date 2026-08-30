@@ -101,6 +101,85 @@ Write the changelog entry under `[Unreleased]` as part of the fix. The script
 refusing on an empty section is a backstop, and by then it is much too late to
 remember what the change was for.
 
+### What the tag sets off
+
+Pushing the tag is where the maintainer's part ends and
+`.github/workflows/release.yml` begins. It runs on any pushed `v*` tag, and on
+`workflow_dispatch` with a tag typed in, which is how a tag pushed before the
+workflow existed gets a Release without being deleted and re-pushed.
+
+Until #28 there was no second half: the tag landed, the tags page showed it,
+and the releases page said "There aren't any releases here", because a tag is
+not a Release.
+
+In order, and refusing at the first thing that does not hold:
+
+| Step | |
+|---|--|
+| tag vs manifest | the tag is `vX.Y.Z` and `manifest.json` says the same `X.Y.Z` |
+| tests | every executable in `tests/`, globbed, on a clean checkout of the tagged commit |
+| package | `omaipsum-X.Y.Z.tar.gz` and its `.sha256` |
+| drift | every `*.qml`, `*.js` and `corpora/*` in the repository is in the tarball, and nothing from `.git`, `tests/`, `docs/`, `.github/` or `scripts/` is |
+| extract | unpack it and ask what the shell asks at load |
+| notes | the `## [X.Y.Z]` section of `CHANGELOG.md`, up to the next `## ` |
+| publish | `gh release create`, titled `omaipsum X.Y.Z` |
+
+`scripts/release.sh` already refuses to tag a tree whose tests fail, so the
+suite runs twice on purpose. The local run is against one laptop's working
+tree; this one is against the commit everyone else will get, and it is the last
+place that can still say no — a release that cannot pass its own tests must not
+be published.
+
+The tarball unpacks to a directory called `cschaba.omaipsum`, not
+`omaipsum-X.Y.Z`, because that is the name Omarchy wants:
+`tar -xzf omaipsum-X.Y.Z.tar.gz -C ~/.config/omarchy/plugins` is then the whole
+install. It carries the manifest, the QML, `Ipsum.js`, `corpora/`, the licence,
+the README, the changelog and the two install scripts — and not `tests/`,
+`docs/`, `scripts/`, `.github/`, `AGENTS.md` or `DEVELOPMENT.md`, none of which
+a user needs and all of which would be shipped under a version number nobody
+can correct afterwards.
+
+**There is no `PKGBUILD`**, which is where this differs from omapass. omapass
+keeps `packaging/PKGBUILD` in its repository and has a `bin/omapass` that
+belongs in `/usr/bin`. An Omarchy plugin is a per-user directory under
+`~/.config/omarchy/plugins` with nothing for pacman to place, this repository
+has no PKGBUILD to template, and one invented in the workflow would be a file
+the project has never built or tested, published under its name. It would also
+put a package manager into a plugin whose honest current position (AGENTS.md,
+*Capabilities it will flag*) is that a scan reports neither `privilege` nor
+`package-manager`.
+
+The extract check is the part worth explaining, because omapass's equivalent
+runs its CLI out of the unpacked tarball and omaipsum has no CLI to run. What
+it does instead is ask the questions the shell asks at load, of the extract
+rather than of the checkout: the manifest parses and its version is the one
+being published; every `entryPoint` resolves to a file that is there; each
+`import "X.js"` in that QML resolves inside the extract, which is what catches
+a tarball built without `Ipsum.js`; the manifest's default variant has a
+corpus; the QML parses under `qmlformat`. Then it eval's the shipped `Ipsum.js`
+under node and generates against every shipped corpus, asking for counts it
+has to hit exactly — the same trick `tests/generator.sh` uses. That last one is
+the difference between a check and a ritual: it runs the shipped code over the
+shipped data and compares the answer.
+
+Publishing goes through `gh release create` rather than a third-party action.
+`gh` is on every runner and needs only `GITHUB_TOKEN`; the action would buy
+formatting and cost a supply-chain dependency on someone who can change what
+runs in this repository. `ci.yml` holds the same line, and `permissions:
+contents: write` is spelled out because creating a Release needs it and nothing
+else here does.
+
+`.github/` is excluded from the marketplace's static scan (AGENTS.md, *What the
+static scan reads*), so this file is not read there — the same reason `ci.yml`'s
+`sudo apt-get` does not count against the project. Worth remembering if a
+workflow ever moves out of `.github/`.
+
+To publish a Release for a tag that already exists:
+
+```bash
+gh workflow run release.yml --repo cschaba/omaipsum -f tag=v0.1.0
+```
+
 ## The marketplace
 
 **omaipsum is not on the [Omarchy plugin marketplace][mp] yet.** Everything it

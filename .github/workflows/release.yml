@@ -1,0 +1,436 @@
+# omaipsum releases — what turns a pushed tag into a GitHub Release.
+#
+# scripts/release.sh ends by pushing `vX.Y.Z` to origin. Until #28 that was the
+# whole of it: the tags page showed the tag and the releases page said "There
+# aren't any releases here", because a tag is not a Release. This file is the
+# missing half — it builds the artifacts, checks them, and publishes the
+# Release named `omaipsum X.Y.Z` with that version's changelog section as the
+# body.
+#
+# --- why the checks run here as well as in release.sh --------------------------
+#
+# release.sh refuses to tag a tree whose tests fail, and that ordering is the
+# point of it: a tag you have to delete and re-push is worse than a release
+# that refuses to start (docs/DEVOPS.md, "Releasing"). But release.sh runs on
+# one maintainer's laptop, against that laptop's working tree, and the tag is
+# what everyone else reacts to. So everything is asked again here, on a clean
+# checkout of the tagged commit: the tag and manifest.json must agree, and the
+# suite must pass. A release that cannot pass its own tests must not be
+# published, and this is the only place that can still say no.
+#
+# --- why `gh release create` and not an action ---------------------------------
+#
+# omapass's equivalent uses softprops/action-gh-release@v2. `gh` is already on
+# every GitHub-hosted runner and needs nothing but GITHUB_TOKEN, so the action
+# would buy formatting and cost a supply-chain dependency on a third party who
+# can change what runs here. ci.yml holds the same line: actions/checkout@v4 and
+# nothing else. That is also why `permissions:` is spelled out — creating a
+# Release needs `contents: write`, and the default token should not have it.
+#
+# --- the label -----------------------------------------------------------------
+#
+# As in ci.yml: `runs-on: ubuntu-latest` must match a label the instance's
+# runner actually registers, and a label no runner claims queues forever rather
+# than failing. The installs below tolerate running as root without sudo for
+# the same reason they do there — act_runner images have no sudo.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  # Lets a tag that was pushed before this file existed be built and published
+  # after the fact, without re-tagging. `git push --delete` and a re-push would
+  # work too and is exactly the thing release.sh is written to avoid.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build a release for (e.g. v0.1.0)
+        required: true
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Work out the version
+        id: version
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] \
+            || { echo "::error::'$tag' is not a vX.Y.Z tag"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "publishing $tag as version ${tag#v}"
+
+      # The version lives in exactly one place, manifest.json (scripts/
+      # release.sh's opening comment), and the tag is derived from it. If they
+      # disagree, one of the two was written by hand and the plugin would
+      # report a version nobody released — the widget reads manifest.json at
+      # runtime to show it in the pulldown, so the wrong number is visible to
+      # users, not just to git.
+      - name: Refuse to publish a tag that disagrees with the manifest
+        run: |
+          manifest=$(python3 -c 'import json;print(json.load(open("manifest.json"))["version"])')
+          if [[ "$manifest" != "${{ steps.version.outputs.version }}" ]]; then
+            echo "::error::tag says ${{ steps.version.outputs.version }} but manifest.json says $manifest"
+            exit 1
+          fi
+          echo "manifest and tag agree on $manifest"
+
+      # Same block as ci.yml's test job, and for the same reason: both test
+      # scripts *skip* rather than fail when node or qmlformat is missing,
+      # which is right on a laptop and wrong here — a slim image would publish
+      # a release whose tests checked almost nothing.
+      - name: Install node and Qt tooling
+        run: |
+          SUDO=""; [[ $(id -u) -eq 0 ]] || SUDO=sudo
+          packages=(qt6-declarative-dev-tools)
+          command -v node >/dev/null 2>&1 || packages+=(nodejs)
+          $SUDO apt-get update -qq
+          $SUDO apt-get install -y -qq "${packages[@]}"
+
+          if ! command -v node >/dev/null 2>&1 && command -v nodejs >/dev/null 2>&1; then
+            $SUDO ln -sf "$(command -v nodejs)" /usr/local/bin/node
+          fi
+
+          # Ubuntu keeps the Qt 6 tools out of PATH, so resolve rather than
+          # assume, and symlink the result somewhere already on PATH — the
+          # tests invoke a bare `qmlformat`, and so does the extract check
+          # further down.
+          if ! command -v qmlformat >/dev/null 2>&1; then
+            found=""
+            for candidate in qmlformat6 /usr/lib/qt6/bin/qmlformat \
+                             /usr/lib/x86_64-linux-gnu/qt6/bin/qmlformat; do
+              if command -v "$candidate" >/dev/null 2>&1 || [[ -x $candidate ]]; then
+                found="$candidate"; break
+              fi
+            done
+            if [[ -n $found ]]; then
+              $SUDO ln -sf "$(command -v "$found" || echo "$found")" /usr/local/bin/qmlformat
+            fi
+          fi
+
+      - name: Refuse a suite that would skip its checks
+        run: |
+          status=0
+          for tool in node qmlformat; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "  $tool -> $(command -v "$tool")"
+            else
+              echo "::error::$tool is missing — the suite would skip its checks and still pass"
+              status=1
+            fi
+          done
+          exit $status
+
+      # Globbed, like ci.yml and scripts/release.sh: a hardcoded list would run
+      # none of a newly landed test script while still reporting a pass, and
+      # this is the last gate before something is published under a version
+      # number.
+      - name: Test before publishing
+        run: |
+          [[ -d tests ]] || { echo "::error::there is no tests/ directory"; exit 1; }
+          mapfile -d '' suite < <(find tests -maxdepth 1 -type f -perm -u+x -print0 | sort -z)
+          (( ${#suite[@]} )) || { echo "::error::no executable tests in tests/ — a release with no tests run is not a release"; exit 1; }
+          for t in "${suite[@]}"; do
+            echo "--- $t"
+            "$t"
+          done
+          echo "${#suite[@]} test script(s) pass"
+
+      # --- the artifact ---------------------------------------------------------
+      #
+      # One tarball and its checksum, and deliberately no PKGBUILD. omapass
+      # ships one because it has packaging/PKGBUILD in the repository and a
+      # `bin/omapass` that belongs in /usr/bin; omaipsum has neither. An Omarchy
+      # plugin is a directory under ~/.config/omarchy/plugins, per user, with
+      # nothing for pacman to place — a PKGBUILD invented here would be a file
+      # this repository has never built or tested, published under its name, and
+      # it would put a package manager into a project that (AGENTS.md,
+      # *Capabilities it will flag*) currently reports neither `privilege` nor
+      # `package-manager`.
+      #
+      # The top-level directory is `cschaba.omaipsum` and not
+      # `omaipsum-$version`, because that is the name the shell requires:
+      # `tar -xzf ... -C ~/.config/omarchy/plugins` then *is* the install, with
+      # nothing to rename. The version stays in the file name, where it does not
+      # have to be renamed away again.
+      #
+      # `./*.qml` and `./*.js` are globbed for the same reason the script lists
+      # everywhere else are: a second QML file is one commit away and a
+      # hardcoded list would ship a tarball missing it. The next step checks
+      # that guess against the repository rather than trusting it.
+      - name: Build the package
+        id: package
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          stage="dist/stage/cschaba.omaipsum"
+          mkdir -p "$stage"
+
+          # Everything needed at runtime, and nothing that only matters in the
+          # repository. LICENSE because MIT travels with the copy; README and
+          # CHANGELOG because a directory a user extracted by hand should still
+          # say what it is and what changed; corpora/ whole, README included,
+          # because that file is the schema for adding a variant and the
+          # variants are the thing users extend.
+          cp -a manifest.json ./*.qml ./*.js corpora \
+                README.md CHANGELOG.md LICENSE install.sh uninstall.sh "$stage/"
+
+          tar -czf "dist/omaipsum-$version.tar.gz" -C dist/stage cschaba.omaipsum
+          (cd dist && sha256sum "omaipsum-$version.tar.gz" > "omaipsum-$version.tar.gz.sha256")
+
+          echo "sha=$(cut -d' ' -f1 < "dist/omaipsum-$version.tar.gz.sha256")" >> "$GITHUB_OUTPUT"
+          echo "--- dist/"
+          ls -la dist/
+          echo "--- contents"
+          tar -tzf "dist/omaipsum-$version.tar.gz"
+
+      # The copy list above is a claim about what the plugin needs. This asks
+      # the repository instead of believing it, in both directions: every QML
+      # file, every JS file and every corpus that exists here has to be in the
+      # tarball, and nothing from .git, tests/, docs/, .github/ or scripts/ may
+      # be. The first half catches a runtime file that landed after the list was
+      # written; the second catches the day somebody adds a path to the `cp`.
+      - name: Refuse a tarball that dropped a runtime file or picked up a repo one
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          listing=$(tar -tzf "dist/omaipsum-$version.tar.gz")
+          status=0
+
+          mapfile -d '' wanted < <(
+            find . -path ./.git -prune -o -path ./dist -prune \
+                 -o -path ./tests -prune -o -path ./docs -prune \
+                 -o -path ./.github -prune -o -path ./scripts -prune \
+                 -o -type f \( -name '*.qml' -o -name '*.js' -o -path './corpora/*' \) -print0 |
+            sort -z)
+          (( ${#wanted[@]} )) || { echo "::error::found no runtime files to check — that cannot be right"; exit 1; }
+          for f in "${wanted[@]}"; do
+            if grep -qxF "cschaba.omaipsum/${f#./}" <<<"$listing"; then
+              echo "  ships: ${f#./}"
+            else
+              echo "::error::${f#./} is in the repository but not in the tarball"
+              status=1
+            fi
+          done
+
+          for unwanted in .git tests docs .github scripts AGENTS.md DEVELOPMENT.md CLAUDE.md; do
+            if grep -qE "^cschaba\.omaipsum/${unwanted//./\\.}(/|$)" <<<"$listing"; then
+              echo "::error::$unwanted made it into the tarball and has no business there"
+              status=1
+            fi
+          done
+
+          (( status == 0 )) || exit 1
+          echo "the tarball holds the plugin and only the plugin"
+
+      # --- does the extract actually work? --------------------------------------
+      #
+      # omapass runs its CLI out of the unpacked tarball. omaipsum has no CLI —
+      # it is QML the Omarchy shell loads — so the honest equivalent is to ask
+      # the same questions the shell asks at load, of the extract and not of the
+      # checkout:
+      #
+      #   the manifest parses, and its version is the one being published;
+      #   every entryPoint it names resolves to a file that is there;
+      #   the QML parses (qmlformat, not qmllint — qs.Commons and qs.Ui resolve
+      #     only inside the running shell, see ci.yml);
+      #   every `import "X.js"` in that QML resolves inside the extract, which
+      #     is the check that catches a tarball built without Ipsum.js;
+      #   the default variant in the manifest has a corpus file;
+      #   and the generator actually generates — Ipsum.js is eval'd out of the
+      #     extract against every corpus in the extract, exactly as
+      #     tests/generator.sh does it, and asked for counts it must hit
+      #     exactly. That is the part that is a check rather than a ritual: it
+      #     runs the shipped code over the shipped data and compares the answer.
+      - name: Check the extract is a plugin that runs
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          tmp=$(mktemp -d)
+          tar -xzf "dist/omaipsum-$version.tar.gz" -C "$tmp"
+          cd "$tmp/cschaba.omaipsum"
+
+          python3 - "$version" <<'PY'
+          import json, os, re, sys
+
+          version = sys.argv[1]
+          errors = []
+
+          try:
+              manifest = json.load(open("manifest.json"))
+          except Exception as exc:
+              sys.exit(f"the extract's manifest.json does not parse: {exc}")
+
+          if manifest.get("version") != version:
+              errors.append(f"extract says version {manifest.get('version')!r}, publishing {version!r}")
+          if manifest.get("id") != "cschaba.omaipsum":
+              errors.append(f"extract's plugin id is {manifest.get('id')!r}")
+
+          for kind, path in sorted(manifest.get("entryPoints", {}).items()):
+              if not os.path.isfile(path):
+                  errors.append(f"entryPoint {kind} -> {path} is not in the extract")
+                  continue
+              print(f"  entryPoint {kind} -> {path}")
+              # `import "Ipsum.js" as Ipsum` — a QML file that imports a
+              # sibling script it was packaged without loads to a blank slot
+              # and one warning nobody is watching.
+              for imported in re.findall(r'^\s*import\s+"([^"]+\.js)"', open(path).read(), re.M):
+                  if os.path.isfile(os.path.join(os.path.dirname(path), imported)):
+                      print(f"    imports {imported} -> present")
+                  else:
+                      errors.append(f"{path} imports {imported}, which is not in the extract")
+
+          corpora = sorted(f for f in os.listdir("corpora") if f.endswith(".json"))
+          if not corpora:
+              errors.append("the extract has no corpora/*.json — the widget would have nothing to generate")
+          print(f"  corpora: {', '.join(corpora)}")
+
+          variant = manifest.get("barWidget", {}).get("defaults", {}).get("variant")
+          if variant is not None and not os.path.isfile(os.path.join("corpora", f"{variant}.json")):
+              errors.append(f"default variant {variant!r} has no corpora/{variant}.json in the extract")
+
+          for message in errors:
+              print(f"::error::{message}")
+          sys.exit(1 if errors else 0)
+          PY
+
+          for f in ./*.qml; do
+            qmlformat "$f" >/dev/null || { echo "::error::$f does not parse in the extract"; exit 1; }
+            echo "  parses: $f"
+          done
+
+          # The shipped generator over the shipped corpora. `.pragma library` is
+          # QML's way of saying "no engine, just functions"; node only needs it
+          # gone, and eval rather than require because the file has no exports —
+          # the same trick tests/generator.sh uses, for the same reason.
+          node - <<'JS'
+          const fs = require("fs");
+          eval(fs.readFileSync("Ipsum.js", "utf8").replace(".pragma library", ""));
+
+          let checked = 0;
+          for (const file of fs.readdirSync("corpora").filter(f => f.endsWith(".json")).sort()) {
+            let corpus, words, paras;
+            // Named rather than left to node's own traceback: the useful half
+            // of "a corpus the generator cannot use" is which corpus.
+            try {
+              corpus = JSON.parse(fs.readFileSync("corpora/" + file, "utf8"));
+              words = generate(corpus, "words", 12, makeRng("release-check"));
+              paras = generate(corpus, "paragraphs", 3, makeRng("release-check"));
+            } catch (error) {
+              console.log(`::error::corpora/${file}: the shipped generator cannot use it — ${error && error.message || error}`);
+              process.exit(1);
+            }
+            const gotWords = countWords(words);
+            const gotParas = paras.split("\n\n").filter(p => p.trim() !== "").length;
+            if (gotWords !== 12) {
+              console.log(`::error::corpora/${file}: asked 12 words, got ${gotWords}`);
+              process.exit(1);
+            }
+            if (gotParas !== 3) {
+              console.log(`::error::corpora/${file}: asked 3 paragraphs, got ${gotParas}`);
+              process.exit(1);
+            }
+            console.log(`  generates: ${file} -> ${JSON.stringify(words.slice(0, 48))}`);
+            checked++;
+          }
+          if (checked === 0) { console.log("::error::no corpus was exercised"); process.exit(1); }
+          console.log(`${checked} corpus/corpora generate exact counts out of the extract`);
+          JS
+
+          echo "the extract is a plugin that runs"
+
+      # The body of the Release is this version's changelog section: the
+      # heading is `## [X.Y.Z] — DATE` and the section runs to the next `## `.
+      # Written to a file rather than through $GITHUB_OUTPUT, because the body
+      # is many paragraphs of prose and a multi-line output is a delimiter
+      # waiting to collide with the text it carries.
+      #
+      # Missing is an error, not a fallback. scripts/release.sh creates the
+      # section as part of tagging and refuses on an empty [Unreleased], so a
+      # tag with no section is a tag that did not come from the release
+      # process — and publishing it with "see the changelog" for a body is how
+      # you end up back at #28, with a release nobody can read.
+      - name: Pull the notes out of the changelog
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re, sys, textwrap
+
+          version = os.environ["VERSION"]
+          text = open("CHANGELOG.md").read()
+          match = re.search(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## |\Z)",
+              text, re.S | re.M)
+          if match is None or not match.group(1).strip():
+              sys.exit(f"::error::CHANGELOG.md has no entries under a '## [{version}]' heading")
+
+          # dedent, so the footer can be written at this file's indentation
+          # without carrying it into the Release body — and so that no line of
+          # it starts at column zero, which would end the YAML block scalar
+          # this script is embedded in.
+          footer = textwrap.dedent(f"""
+              ---
+
+              ### Install
+
+              ```bash
+              omarchy plugin add https://github.com/cschaba/omaipsum.git --enable
+              ```
+
+              Or from the tarball below — it unpacks to a `cschaba.omaipsum/`
+              directory, which is the name Omarchy wants:
+
+              ```bash
+              tar -xzf omaipsum-{version}.tar.gz -C ~/.config/omarchy/plugins
+              omarchy plugin enable cschaba.omaipsum
+              omarchy restart shell
+              ```
+
+              `sha256: {os.environ["SHA"]}`
+
+              Requires `wl-clipboard` for copying. The plugin writes nothing
+              outside its own directories and runs no package manager.
+              """)
+
+          with open("dist/release-notes.md", "w") as out:
+              out.write(match.group(1).strip() + "\n" + footer)
+
+          print(f"--- dist/release-notes.md ({version})")
+          print(open("dist/release-notes.md").read())
+          PY
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.package.outputs.sha }}
+
+      # --verify-tag so a typo cannot make gh create the tag it was supposed to
+      # be publishing. The title is `omaipsum X.Y.Z`, which is what the tags
+      # page could not give us and what #28 asked for.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          tag="${{ steps.version.outputs.tag }}"
+          gh release create "$tag" \
+            --verify-tag \
+            --title "omaipsum $version" \
+            --notes-file dist/release-notes.md \
+            "dist/omaipsum-$version.tar.gz" \
+            "dist/omaipsum-$version.tar.gz.sha256"
+          echo "published: $(gh release view "$tag" --json url --jq .url)"

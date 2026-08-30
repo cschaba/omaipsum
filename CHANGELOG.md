@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Pushing a tag now publishes a GitHub Release with a tarball, its checksum
+  and the changelog entry, instead of leaving a bare tag.
+
 ## [0.1.0] — 2026-08-30
 
 - A screenshot in the README, the three new variants documented beside the
