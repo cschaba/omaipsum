@@ -132,6 +132,32 @@ Panel {
     root.failedFiles = next
   }
 
+  // --- version --------------------------------------------------------------
+  //
+  // manifest.json is where Omarchy requires the version to live and where
+  // scripts/release.sh writes it, which makes any second copy a copy that a
+  // release leaves behind. Read with FileView from pluginDir, exactly as the
+  // corpora are.
+
+  property string version: ""
+
+  FileView {
+    path: root.pluginDir + "manifest.json"
+    // A version nobody can read costs one dim line at the foot of the panel;
+    // it is not worth a line in the shell's journal.
+    printErrors: false
+    onLoaded: root.acceptManifest(text())
+  }
+
+  function acceptManifest(raw) {
+    try {
+      var manifest = JSON.parse(raw)
+      root.version = manifest && manifest.version ? String(manifest.version) : ""
+    } catch (e) {
+      root.version = ""
+    }
+  }
+
   // --- configured defaults --------------------------------------------------
 
   // manifest.json's barWidget.defaults are metadata for the settings UI and
@@ -352,7 +378,13 @@ Panel {
       // to close the panel — the pulldown disappearing is the user's first
       // acknowledgement, and it has to mean the child is up and holding the
       // text — and the moment to say so.
-      root.close()
+      //
+      // Guarded because the bar's left click copies with no panel in it at
+      // all. PanelController.hide() on a closed panel is a no-op either way,
+      // but the rule is "close what was opened", and a close that fires for a
+      // copy nobody opened anything for is one refactor away from mattering.
+      if (root.opened)
+        root.close()
       root.notify(copyProc.headline, copyProc.detail, "low")
     }
 
@@ -385,6 +417,11 @@ Panel {
       // user is already looking rather than into a toast behind their back.
       copyProc.pendingText = ""
       root.clipboardCheck = "missing"
+      // Unless it is the bar's left click, which has no panel to put a line
+      // in. This is the one failure that cannot be mistaken for the supersede
+      // onExited has to stay quiet about: the child never ran.
+      if (!root.opened)
+        root.notify("Nothing was copied", "wl-copy not found — install wl-clipboard", "critical")
     }
   }
 
@@ -439,6 +476,40 @@ Panel {
     // to arm it again or the second copy gets no pipe at all.
     copyProc.stdinEnabled = true
     copyProc.running = true
+  }
+
+  // Left click on the bar icon: the whole interaction, in one click. Nothing
+  // opens, so every way this can fail has to become a toast — the panel's own
+  // "reading variants…" and "none could be read" lines are on a surface that
+  // is not there, and silence would leave the user pasting whatever they had
+  // on the clipboard before and finding out much later.
+  function copyFromBar() {
+    if (root.loading) {
+      root.notify("Still reading text variants", "Try again in a moment", "low")
+      return
+    }
+    if (!root.hasCorpora) {
+      root.notify("Nothing to copy", root.failedFiles.length > 0 ? "None of the text variants in " + root.pluginDir + "corpora/ could be read" : "No text variants installed in " + root.pluginDir + "corpora/", "critical")
+      return
+    }
+    // The settings are applied when the panel opens, so a widget nobody has
+    // opened yet is still sitting on the property initialisers — 40 words,
+    // not the configured 3 paragraphs — and would copy something the user
+    // never chose. With the panel open, what is on screen is the settings and
+    // resetting it under the user would be worse.
+    if (!root.opened)
+      root.applyDefaults()
+    // The same reason the panel rolls on open: a second click that hands over
+    // the first click's paragraph is a tool that did nothing.
+    root.rollSeed()
+    // generate() can still come back empty — a corpus that parsed but cannot
+    // produce this unit — and copyCurrent() answers that by returning, which
+    // from here would be the silence this whole function exists to avoid.
+    if (!root.previewText) {
+      root.notify("Nothing was copied", "That variant produced no text", "critical")
+      return
+    }
+    root.copyCurrent()
   }
 
   // --- keyboard cursor ------------------------------------------------------
@@ -578,8 +649,22 @@ Panel {
     // it; the circle variants read a shade closer to the power glyph and give
     // the letter less room than the box does.
     text: "󰰌"
-    tooltipText: "Lorem ipsum"
-    onPressed: root.toggle()
+    tooltipText: "Lorem ipsum — click to copy, right-click for options"
+    // The int is a Qt.MouseButton: WidgetButton.triggerPress is handed
+    // `mouse.button` straight off its MouseArea, which accepts left, right and
+    // middle. Compared the way panels/audio and panels/power do it.
+    //
+    // Middle click does nothing, deliberately. The first-party widgets that
+    // use it give it a third action, and this one has no third action to give:
+    // copying and opening both already have a button, and a middle click that
+    // did either would be a guess at which. Spelling both branches out rather
+    // than letting one of them be the `else` is what keeps it that way.
+    onPressed: function (b) {
+      if (b === Qt.LeftButton)
+        root.copyFromBar()
+      else if (b === Qt.RightButton)
+        root.toggle()
+    }
   }
 
   // --- pulldown -------------------------------------------------------------
@@ -951,6 +1036,22 @@ Panel {
                 }
               }
             }
+          }
+
+          // Something you go looking for, not something you read every time,
+          // so it sits under the action row in the dim caption the failure
+          // lines use. Hidden rather than blank when the manifest could not be
+          // read: a footer saying "omaipsum" and nothing else is a bug report
+          // of its own. Not gated on hasCorpora — a panel that is all failure
+          // message is exactly when someone wants the version number.
+          Text {
+            width: parent.width
+            visible: root.version !== ""
+            text: "omaipsum " + root.version
+            color: root.dim
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            horizontalAlignment: Text.AlignRight
           }
         }
       }
