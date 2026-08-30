@@ -402,8 +402,10 @@ jobs:
 
               `sha256: {os.environ["SHA"]}`
 
-              Requires `wl-clipboard` for copying. The plugin writes nothing
-              outside its own directories and runs no package manager.
+              Requires `wl-clipboard` for copying. The plugin itself writes
+              nothing outside its own directories and runs no package manager;
+              installing it registers a bar widget through Omarchy's own
+              commands, which record it in your shell.json.
               """)
 
           with open("dist/release-notes.md", "w") as out:

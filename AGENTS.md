@@ -287,9 +287,17 @@ the plugin behaves, made to people who cannot check it themselves. What
 omaipsum could tick today, and what keeps each one true afterwards:
 
 - **"Does not overwrite user configuration without explicit consent."**
-  omaipsum goes further than the checklist asks: it writes nothing outside its
-  own directories at all. See *Stay inside the plugin* above. The easiest way
-  to keep this claim true is to keep having nothing to declare.
+  True, and worth stating precisely rather than grandly. omaipsum writes
+  nothing outside its own directories *itself*. Installing it does change one
+  file outside them — `~/.config/omarchy/shell.json` — because `install.sh`
+  calls `omarchy plugin enable` and `omarchy bar put`, and Omarchy records the
+  widget in its own config. That is the consent: running the installer is the
+  request. See *Stay inside the plugin* above.
+
+  The flat claim "writes nothing outside its own directories" was in the README
+  and here, next to instructions that plainly registered a bar widget. A
+  reviewer reading both would have caught the contradiction, and been right to
+  wonder what else was overstated.
 - **"The repository is public and contains installation and removal
   instructions."** True of the GitHub mirror, which is what a listing would
   point at; the README documents both directions. `uninstall.sh` has to keep

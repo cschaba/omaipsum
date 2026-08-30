@@ -6,6 +6,11 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A corpus file can no longer make the panel fetch anything: corpus text is
+  rendered as plain text, and words that are not plain words are rejected.
+- Corrected the claim that omaipsum writes nothing outside its own
+  directories — installing it registers a bar widget in shell.json.
+
 ## [0.1.3] — 2026-08-30
 
 - A narrated screencast in the README, behind a thumbnail.

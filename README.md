@@ -78,10 +78,16 @@ The pulldown opens from its bar icon. If you want a key for it as well,
 o.bind("SUPER + ALT + I", "Lorem ipsum", "omarchy-shell cschaba.omaipsum.widget toggle")
 ```
 
-followed by `hyprctl reload`. omaipsum writes nothing outside its own
-directories — not your Hyprland config, not `shell.json`. If `SUPER + ALT + I`
-already appears in that file it says so, and points you at
+followed by `hyprctl reload`. omaipsum never edits your Hyprland config
+itself — it prints the line and you paste it. If `SUPER + ALT + I` already
+appears in that file it says so, and points you at
 `omarchy menu keybindings --print` to find a free chord.
+
+The one file outside omaipsum's own directories that changes is
+`~/.config/omarchy/shell.json`, and omaipsum does not write it: `install.sh`
+calls `omarchy plugin enable` and `omarchy bar put`, and Omarchy writes its own
+config to record that you added a widget. `uninstall.sh` reverses it the same
+way.
 
 ## Usage
 

@@ -97,6 +97,19 @@ Panel {
       return
     }
 
+    // corpora/README.md promises every word matches ^[a-z]+$, and until now
+    // nothing checked at runtime — the tests check the six files shipped here,
+    // which says nothing about the seventh a user drops in. Enforcing it is
+    // what makes "the generator adds all punctuation" a property rather than a
+    // convention, and it keeps anything shaped like markup out of the panel
+    // even if a Text somewhere loses its textFormat again.
+    for (var w = 0; w < corpus.words.length; w++) {
+      if (!/^[a-z]+$/.test(String(corpus.words[w]))) {
+        root.rejectCorpus(fileName)
+        return
+      }
+    }
+
     var next = root.corpora.slice(0)
     // FileView can emit loaded more than once for the same file during
     // startup, and a variant listed twice is exactly how that shows up.
@@ -957,6 +970,11 @@ Panel {
             width: parent.width
             visible: root.hasCorpora && root.currentBlurb !== ""
             text: root.currentBlurb
+            // Corpus data is not markup. Qt's default AutoText sniffs a string
+            // for tags, so a hostile corpora/*.json — the one file the README
+            // invites strangers to add — could put an <img src="http://…"> here
+            // and make the shell fetch it. PlainText is the whole fix.
+            textFormat: Text.PlainText
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -969,6 +987,8 @@ Panel {
             width: parent.width
             visible: root.hasCorpora && root.failedFiles.length > 0
             text: "Couldn’t read " + root.failedFiles.join(", ")
+            // Filenames come off the disk and are markup to AutoText too.
+            textFormat: Text.PlainText
             color: Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -1082,6 +1102,8 @@ Panel {
                 // which keeps the scrollbar — a binding loop.
                 width: previewBox.width - previewBox.contentLeftInset - previewBox.contentRightInset
                 text: root.previewText
+                // The generated text is built from corpus words; same reasoning.
+                textFormat: Text.PlainText
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
