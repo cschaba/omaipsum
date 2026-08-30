@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Left click on the bar icon copies straight to the clipboard; right click
+  opens the pulldown, which now shows the version at the bottom.
+
 - The bar icon is an L in a square frame, and the copy notification uses the
   same glyph.
 
