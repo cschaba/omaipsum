@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Return copies again after picking a variant with the mouse.
+
 - The docs are split by audience — user, developer, devops, architecture —
   and the reasoning behind each decision now lives in the repository rather
   than in closed issues.
