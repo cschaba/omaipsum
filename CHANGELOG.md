@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The issue tracker moved to GitHub too, keeping the original numbers, so
+  every Fixes #N in the history resolves.
+
 - The code lives on GitHub now, with CI that can actually run; Gitea is the
   mirror and keeps the issue tracker.
 
