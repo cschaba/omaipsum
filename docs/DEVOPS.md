@@ -1,4 +1,4 @@
-# Shipping omaipsum
+# Shipping OmaIpsum
 
 For someone releasing it, running CI on it, or working out what installing it
 does to a machine.
@@ -150,7 +150,7 @@ put a package manager into a plugin whose honest current position (AGENTS.md,
 `package-manager`.
 
 The extract check is the part worth explaining, because omapass's equivalent
-runs its CLI out of the unpacked tarball and omaipsum has no CLI to run. What
+runs its CLI out of the unpacked tarball and OmaIpsum has no CLI to run. What
 it does instead is ask the questions the shell asks at load, of the extract
 rather than of the checkout: the manifest parses and its version is the one
 being published; every `entryPoint` resolves to a file that is there; each
@@ -182,7 +182,7 @@ gh workflow run release.yml --repo cschaba/omaipsum -f tag=v0.1.0
 
 ## The marketplace
 
-**omaipsum is not on the [Omarchy plugin marketplace][mp] yet.** Everything it
+**OmaIpsum is not on the [Omarchy plugin marketplace][mp] yet.** Everything it
 asks for is in place; the submission itself is still to do. Nothing in this
 repository claims a listing, and nothing should until one is made.
 
@@ -216,7 +216,7 @@ than merely eventually correct.
 
 Worth being clear-eyed about what the marketplace does and does not do: it
 validates the listing, not the plugin. Plugins run unsandboxed. Everything that
-makes omaipsum safe to install is a property of this repository — it writes
+makes OmaIpsum safe to install is a property of this repository — it writes
 nothing outside its own directories, runs no package manager, needs no
 privileges — and not of anyone's review.
 
@@ -236,7 +236,7 @@ any list.
 ## What install.sh does to a machine
 
 Both scripts are safe to re-run, and neither writes anything outside
-omaipsum's own directories. Registration goes through Omarchy's own commands
+OmaIpsum's own directories. Registration goes through Omarchy's own commands
 because they own `~/.config/omarchy/shell.json`; the keybinding is printed
 rather than written, because `~/.config/hypr/bindings.lua` belongs to the
 user. A plugin that rewrites your compositor config is one you have to trust

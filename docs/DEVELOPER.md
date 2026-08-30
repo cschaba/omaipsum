@@ -1,4 +1,4 @@
-# Changing omaipsum
+# Changing OmaIpsum
 
 For someone editing the code: what is where, how to see an edit run, how to
 test it, and the three ways a change looks broken when it is not.
@@ -25,7 +25,7 @@ API to reach for before writing anything.
 | `tests/smoke.sh` | everything that is not the generator |
 | `tests/generator.sh` | `Ipsum.js`, exercised under node |
 | `.github/workflows/ci.yml` | the four CI jobs |
-| `README.md` | for people using omaipsum rather than working on it |
+| `README.md` | for people using OmaIpsum rather than working on it |
 | `DEVELOPMENT.md` | a pointer at the three documents in `docs/` |
 | `docs/DEVELOPER.md` | this file |
 | `docs/DEVOPS.md` | remotes, CI, releasing, install mechanics |

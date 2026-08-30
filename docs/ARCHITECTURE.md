@@ -1,4 +1,4 @@
-# Why omaipsum is shaped like this
+# Why OmaIpsum is shaped like this
 
 The reasoning behind the code. Every decision here is visible in the code and
 none of the options it beat are, which is what this file is for: the discarded
@@ -7,14 +7,14 @@ alternative and the reason it lost.
 [DEVELOPER.md](DEVELOPER.md) has the layout, the local loop and the tests.
 [DEVOPS.md](DEVOPS.md) has the remotes, CI, releasing and what the install
 scripts do to a machine. [../README.md](../README.md) is for people using
-omaipsum rather than working on it.
+OmaIpsum rather than working on it.
 
 ## The shape, in one paragraph
 
-omaipsum is a bar icon with a pulldown. `Ipsum.js` turns a word list into
+OmaIpsum is a bar icon with a pulldown. `Ipsum.js` turns a word list into
 prose and knows nothing else. `BarWidget.qml` is the icon, the panel, and
 everything that reaches outside the process. `corpora/` holds one JSON file
-per text variant. There is no backend, no config file of omaipsum's own, and
+per text variant. There is no backend, no config file of OmaIpsum's own, and
 nothing the plugin writes to disk at all; the only two binaries it runs are
 `wl-copy` and `omarchy-notification-send`.
 
@@ -94,7 +94,7 @@ would be whichever file the disk returned first.
 
 omapass, the sibling plugin most of this repository was copied from, has one,
 because everything that touches a secret has to happen in a single place
-outside the long-lived shell process. omaipsum handles nothing sensitive, so a
+outside the long-lived shell process. OmaIpsum handles nothing sensitive, so a
 backend here would be a process boundary with nothing to protect on either
 side of it.
 
@@ -363,7 +363,7 @@ off their curated list, and the three shipped variants were.
   <https://macmenubar.com/tiny-ipsum/>
 
 Tiny Ipsum is a macOS menu-bar app that generates placeholder text and copies
-it, and omaipsum is a bar icon with a pulldown for the same reason: filler
+it, and OmaIpsum is a bar icon with a pulldown for the same reason: filler
 text is wanted in the middle of doing something else, so the whole interaction
 has to fit in one surface reached from the bar. `BarWidget.qml` names it twice
 — "the Tiny Ipsum shape" for that decision, and "the Tiny Ipsum behaviour" for
