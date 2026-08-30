@@ -261,6 +261,13 @@ Panel {
   }
 
   function setCount(value) {
+    // Every other route to the count arrives here — h/l, the field, the
+    // defaults — and each of them answers the question a pending count is
+    // still asking. So the nudge wins and the buffer goes: a stale `4` left
+    // beside a number the user just nudged would override it at the next unit
+    // key. Typed counts take their digits in applyCountBuffer() before
+    // calling this, so they survive their own clear.
+    root.countBuffer = ""
     var next = Math.round(Number(value))
     if (!isFinite(next))
       next = 1
@@ -288,6 +295,59 @@ Panel {
     if (next < 0 || next >= Ipsum.UNITS.length)
       return
     root.setUnit(Ipsum.UNITS[next])
+  }
+
+  // --- typed counts ---------------------------------------------------------
+  //
+  // vim's grammar, borrowed whole: digits are a prefix to a unit key, so 4w is
+  // four words and a bare w is words at whatever count is already set. It adds
+  // to what is here rather than duplicating it — w/s/p still set the unit, ⏎
+  // still copies, and the digits are the only new idea.
+
+  property string countBuffer: ""
+
+  // The keys are the units' own initials, so there is no second table to keep
+  // in step with Ipsum.UNITS. A unit added later that shares an initial would
+  // need one.
+  function unitForKey(key) {
+    for (var i = 0; i < Ipsum.UNITS.length; i++)
+      if (Ipsum.UNITS[i].charAt(0) === key)
+        return Ipsum.UNITS[i]
+    return ""
+  }
+
+  // True for any digit, whether or not it changed the buffer: a digit is never
+  // also a unit key, and swallowing it is what keeps the two apart.
+  function pushCountDigit(key) {
+    if (key < "0" || key > "9")
+      return false
+    // vim's leading-zero rule, which is also where "0 on its own does nothing"
+    // comes from: a count does not start with a zero, so the first one is not
+    // part of a count at all.
+    if (key === "0" && root.countBuffer === "")
+      return true
+    // Three digits covers every reachable count — 500 is the largest ceiling
+    // and needs exactly three. A fourth is dropped rather than shifted in,
+    // because 1000 quietly becoming 000 is the kind of thing you only notice
+    // after pasting.
+    if (root.countBuffer.length >= 3)
+      return true
+    root.countBuffer += key
+    return true
+  }
+
+  // The unit moves first, always. setCount clamps against maxCount and
+  // maxCount is a function of the unit, so 40p typed while the unit is words
+  // would otherwise be clamped by the words ceiling and then clamped again by
+  // setUnit against the paragraph one — wrong twice, and silently. Unit first,
+  // count second, clamped once, against the ceiling the user just asked for.
+  function applyCountBuffer(unitName) {
+    var typed = root.countBuffer
+    root.countBuffer = ""
+    if (unitName !== "")
+      root.setUnit(unitName)
+    if (typed !== "")
+      root.setCount(Number(typed))
   }
 
   // Exactly the string that goes on the clipboard, and exactly what the
@@ -617,6 +677,8 @@ Panel {
     root.focusSection = "variant"
     root.selectedIndex = 0
     root.pendingReturn = false
+    // A count typed in one session must not survive into the next.
+    root.countBuffer = ""
   }
 
   // --- bar button -----------------------------------------------------------
@@ -731,16 +793,39 @@ Panel {
           // still works the control under the cursor — otherwise ⏎ did both.
           if (root.pendingReturn) {
             root.pendingReturn = false
+            // 4⏎ is four of the unit already chosen. It is the obvious reading,
+            // it collides with nothing — a bare ⏎ still copies what is on
+            // screen, because an empty buffer changes nothing here.
+            root.applyCountBuffer("")
             root.copyCurrent()
             return
           }
           if (root.cursorActive)
             root.activateCursor()
         }
-        onCloseRequested: root.close()
+        onCloseRequested: {
+          // A half-typed count is exactly when you meant to back out of the
+          // count rather than out of the widget. A second Esc closes, as before
+          // — and while the field or the variant list has the keys, the catcher
+          // is blocked and this never runs at all.
+          if (root.countBuffer !== "") {
+            root.countBuffer = ""
+            return
+          }
+          root.close()
+        }
         onTextKey: function (t) {
-          if (t === "r" || t === "R")
+          // r stays regenerate and is not part of the grammar, so it leaves a
+          // half-typed count where it is.
+          if (t === "r" || t === "R") {
             root.rollSeed()
+            return
+          }
+          if (root.pushCountDigit(t))
+            return
+          var named = root.unitForKey(t)
+          if (named !== "")
+            root.applyCountBuffer(named)
         }
 
         Column {
@@ -989,8 +1074,16 @@ Panel {
               anchors.right: actionRow.left
               anchors.rightMargin: Style.spacing.controlGap
               anchors.verticalCenter: parent.verticalCenter
-              text: "j/k move · h/l change · space pick · r new sample · ⏎ copy · esc close"
-              color: root.dim
+              // Where the pending count is said out loud. Invisible modal
+              // state is the thing people hate about modal editors, and this
+              // is the only place with room for it: the count row is full to
+              // the panel's right edge, and a three-digit buffer beside the
+              // chips is clipped by it. Taking the whole line and the accent
+              // colour also lets it say what will resolve it, which is the
+              // point — a `12` on screen has to explain why the next keystroke
+              // did something surprising.
+              text: root.countBuffer !== "" ? root.countBuffer + "… · w/s/p picks the unit · ⏎ copies at that count · esc clears the count" : "j/k move · h/l change · space pick · 4w count · r new sample · ⏎ copy · esc close"
+              color: root.countBuffer !== "" ? Color.accent : root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap

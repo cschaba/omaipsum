@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- Typed counts in the pulldown, vim style: 4w, 2s, 3p, and a bare unit key
+  for the count already set.
+
 - Left click on the bar icon copies straight to the clipboard; right click
   opens the pulldown, which now shows the version at the bottom.
 
