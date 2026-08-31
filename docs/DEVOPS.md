@@ -245,6 +245,52 @@ live there because keeping them true is a constraint on every change, not a
 step in a release. Check them against the code on the day rather than against
 any list.
 
+## The screencast, and its copy on GitHub's CDN
+
+`docs/screencast.mp4` is in the repository and is the master. The README does
+**not** embed it today: a thumbnail linking to the file looked like a player and
+behaved like a download, which is a worse promise than making none, so the
+README carries the still screenshot and lists the video among the docs.
+
+An inline player is possible and is described below, because it needs a second
+copy of the same file on GitHub's CDN — refreshed by a different route from the
+one in git, which is the whole hazard and the reason for the check.
+
+GitHub renders a player only for an uploaded attachment. Checked, rather than
+assumed from the documentation, which does not mention READMEs at all:
+
+- A `<video>` tag is **stripped** by GitHub's sanitiser. Both an attachment URL
+  and a repo-relative path render as an empty paragraph.
+- A plain markdown **link** to `https://github.com/user-attachments/assets/<uuid>`
+  is rewritten into a `<video>` element pointing at a signed
+  `private-user-images.githubusercontent.com/….mp4` URL. That is the player.
+
+Video attachments are capped at 10 MB on a free plan and 100 MB on a paid one.
+
+### Replacing the video
+
+There is no API for markdown attachments, so the upload is a manual step:
+
+1. Re-record, and replace `docs/screencast.mp4`.
+2. Open any issue, pull request or discussion comment on GitHub — a draft is
+   enough, it does not have to be posted — and drag the file in.
+3. Copy the `https://github.com/user-attachments/assets/<uuid>` URL it inserts,
+   and put it in `README.md` in place of the old one.
+4. Update `docs/screencast.mp4.sha256`:
+   `sha256sum docs/screencast.mp4 | awk '{print $1}' > docs/screencast.mp4.sha256`
+
+Step 4 is not bookkeeping. `tests/smoke.sh` compares that hash against the
+committed file and fails if they differ — but only once `README.md` actually
+contains a `user-attachments` URL, so the check arrives with the thing it
+protects rather than failing an honest re-record today. That is what stops step
+2 being forgotten: the README would otherwise keep playing the old take indefinitely,
+and nobody rereads their own README often enough to catch it. The suite also
+fails if a `<video>` tag appears, because that renders as nothing at all.
+
+The test cannot verify the CDN copy holds the same bytes — the URL is signed
+and expires, so it is not fetchable from a test. It proves the repository copy
+did not move without the upload, which is the failure that actually happens.
+
 ## What install.sh does to a machine
 
 Both scripts are safe to re-run, and neither writes anything outside

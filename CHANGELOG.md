@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The README no longer shows a play button that only downloads a file.
+
 ## [0.1.8] — 2026-08-30
 
 - DEVOPS.md describes the marketplace submission form as it actually is.
