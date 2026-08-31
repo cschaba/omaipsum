@@ -8,10 +8,6 @@ developers, anyone writing a template.
 
 ![The OmaIpsum pulldown: a variant picker, a count, words/sentences/paragraphs, and a live preview](docs/pulldown.png)
 
-[![Watch a minute of OmaIpsum: picking a variant, setting a count, and pasting the result into an editor](docs/screencast-thumb.png)](docs/screencast.mp4)
-
-*A minute of it working, with narration — GitHub plays it in the file view.*
-
 Six text variants ship with it: the Latin one everybody knows, and five that
 are easier to read past. You choose words, sentences or paragraphs, and you get
 exactly the number you asked for.
@@ -218,6 +214,7 @@ OmaIpsum is a directory of QML, a JavaScript generator and two shell scripts.
 | [AGENTS.md](AGENTS.md) | the conventions a change is expected to follow |
 | [CHANGELOG.md](CHANGELOG.md) | what changed when |
 | [corpora/README.md](corpora/README.md) | the corpus schema for a variant |
+| [docs/screencast.mp4](docs/screencast.mp4) | a narrated minute of it working |
 
 ## How this was built
 

@@ -362,6 +362,57 @@ if os.path.isfile(changelog):
     # Without it there is nothing to move and the release notes come out empty.
     yes("CHANGELOG.md keeps an [Unreleased] section",
         re.search(r"^##\s*\[Unreleased\]", text, re.M) is not None)
+
+# --- the screencast and its CDN copy ----------------------------------------
+#
+# The repository is master and the copy behind the README's player is a copy.
+# GitHub renders a player only for an uploaded attachment URL, and there is no
+# API to upload one — so the two are refreshed by different means and will drift
+# the moment somebody re-records the video and forgets the second half.
+#
+# Nobody rereads their own README often enough to notice a player showing last
+# month's take, so this is checked rather than remembered: the hash beside the
+# file is the hash of the video that was uploaded. If they disagree, the upload
+# did not happen.
+#
+# This cannot prove the CDN copy holds the same bytes — the URL is signed and
+# expires, so a test cannot fetch it. It proves the repository copy has not
+# moved without the upload, which is the failure that actually occurs.
+
+section("the screencast")
+
+video = os.path.join(ROOT, "docs", "screencast.mp4")
+recorded = os.path.join(ROOT, "docs", "screencast.mp4.sha256")
+readme_path = os.path.join(ROOT, "README.md")
+
+readme = open(readme_path, encoding="utf-8").read() if os.path.isfile(readme_path) else ""
+
+# The hash only means something while a CDN copy is actually in use. The README
+# does not embed one today, so enforcing it would fail an honest re-record with
+# advice about refreshing something nobody is serving. Gated on the embed, the
+# check arrives with the thing it protects and stays quiet until then.
+embedded = "user-attachments/assets/" in readme
+
+if os.path.isfile(video) and embedded:
+    yes("docs/screencast.mp4.sha256 records the uploaded video's hash",
+        os.path.isfile(recorded))
+    if os.path.isfile(recorded):
+        import hashlib
+        actual = hashlib.sha256(open(video, "rb").read()).hexdigest()
+        want = open(recorded, encoding="utf-8").read().strip()
+        # check() rather than yes(): when these disagree the two hashes are
+        # the useful part of the failure, and yes() would only say "False".
+        check("the committed screencast matches the hash of the uploaded copy"
+              " — if this fails, re-upload docs/screencast.mp4 to GitHub, put"
+              " the new user-attachments URL in README.md, and write the new"
+              " hash into docs/screencast.mp4.sha256",
+              actual, want)
+
+# Unconditional: a <video> tag renders as nothing at all on GitHub whether or
+# not an attachment is in use, and it fails silently, so it is worth refusing
+# outright rather than only while the embed exists.
+yes("the README does not use a <video> tag, which GitHub strips",
+    "<video" not in readme)
 CHECKS_EOF
 
 # The scripts the dispatcher scan is handed. Globbed, not listed, so install.sh,
