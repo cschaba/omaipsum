@@ -234,7 +234,7 @@ jobs:
             fi
           done
 
-          for unwanted in .git tests docs .github scripts AGENTS.md DEVELOPMENT.md CLAUDE.md; do
+          for unwanted in .git tests docs .github scripts AGENTS.md DEVELOPMENT.md CLAUDE.md preview.png; do
             if grep -qE "^cschaba\.omaipsum/${unwanted//./\\.}(/|$)" <<<"$listing"; then
               echo "::error::$unwanted made it into the tarball and has no business there"
               status=1

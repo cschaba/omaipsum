@@ -286,6 +286,23 @@ assumed from the documentation, which does not mention READMEs at all:
 
 Video attachments are capped at 10 MB on a free plan and 100 MB on a paid one.
 
+### The marketplace preview image
+
+`preview.png` at the repository root is picked up by the marketplace, which
+strips its metadata and generates the card and detail images itself — no manual
+resizing wanted. Only a root file with one of the names `preview.png`, `.jpg`,
+`.jpeg`, `.webp` or `.avif` is found; anything under `docs/` is invisible to it.
+
+It is a copy of `docs/pulldown.png`, and it does **not** ship. The release
+workflow's `cp` list is explicit, so a root file is excluded by default, and
+`preview.png` is named in the drift check's unwanted set so that stays
+deliberate rather than incidental — the day somebody adds `./*.png` to the copy
+list, the check says so.
+
+Retake it whenever the panel changes visibly. The old one showed
+`omaipsum 0.0.1` in its footer, eight releases and one rename out of date, which
+would have gone on the listing as the plugin's public face.
+
 ### Replacing the video
 
 There is no API for markdown attachments, so the upload is a manual step:
