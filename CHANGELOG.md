@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A preview image for the marketplace listing, and a fresh screenshot in the
+  README showing the current name and version.
+
 ## [0.1.10] — 2026-09-01
 
 - OmaIpsum is listed on the Omarchy plugin marketplace; the docs say so
