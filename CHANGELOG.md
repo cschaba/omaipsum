@@ -6,6 +6,9 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- OmaIpsum is listed on the Omarchy plugin marketplace; the docs say so
+  instead of saying it has not been submitted.
+
 ## [0.1.9] — 2026-08-31
 
 - The README no longer shows a play button that only downloads a file.

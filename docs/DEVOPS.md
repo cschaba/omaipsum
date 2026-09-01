@@ -182,11 +182,30 @@ gh workflow run release.yml --repo cschaba/omaipsum -f tag=v0.1.0
 
 ## The marketplace
 
-**OmaIpsum is not on the [Omarchy plugin marketplace][mp] yet.** Everything it
-asks for is in place; the submission itself is still to do. Nothing in this
-repository claims a listing, and nothing should until one is made.
+**OmaIpsum is listed on the [Omarchy plugin marketplace][mp]** —
+https://plugins.omarchy.org/plugin.html?id=cschaba.omaipsum — submitted as
+[issue 3635][sub] and published on 2026-08-31.
 
-[mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace
+[mp]: https://github.com/omacom/omarchy-plugin-marketplace
+[sub]: https://github.com/omacom/omarchy-plugin-marketplace/issues/3635
+
+The submission is worth reading if another one is ever made, because two things
+cost a round trip. The body must use the six headings from the marketplace's
+`SUBMISSION.md`, in order, including the checklist of five ticked boxes — that
+checklist *is* the attestation the validator reads, and a body missing it fails
+with "fields are missing, reordered, or malformed". And the tag values are
+lowercase (`bar`, `quickshell`) even though the issue form displays them
+capitalised, while the category is case-sensitive as written (`Widgets`).
+
+The automated baseline returned `needs-fixes` with one finding,
+`remote-git-execution-unpinned`, against `scripts/release.sh` — a false
+positive, since the flagged `git fetch` only counts how far behind the checkout
+is and the flagged `bash -n` parses local files without executing them, and the
+script is not shipped. It also listed `installer` and `remote-build`, both
+accurate, and `package-manager`, which matched text printing `omarchy pkg add`
+rather than any invocation. A maintainer accepted all of it for that commit
+after those were explained on the issue; the selective policy exists for
+exactly that.
 
 ### What it requires, and where each one is
 
@@ -283,7 +302,7 @@ Step 4 is not bookkeeping. `tests/smoke.sh` compares that hash against the
 committed file and fails if they differ — but only once `README.md` actually
 contains a `user-attachments` URL, so the check arrives with the thing it
 protects rather than failing an honest re-record today. That is what stops step
-2 being forgotten: the README would otherwise keep playing the old take indefinitely,
+2 being forgotten: the README would otherwise keep playing the old take
 and nobody rereads their own README often enough to catch it. The suite also
 fails if a `<video>` tag appears, because that renders as nothing at all.
 

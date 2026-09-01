@@ -269,12 +269,15 @@ Prefer them over touching `shell.json`, which they own.
 
 ## Publishing
 
-**OmaIpsum is not on the [Omarchy plugin marketplace][mp], and has not been
-submitted.** The public mirror was the prerequisite and it exists; the
-submission itself is still to do. Nothing in this repository claims a listing,
-and nothing should until one is made.
+**OmaIpsum is listed on the [Omarchy plugin marketplace][mp]**, published and
+verified on 2026-08-31 by `maintainer-reviewed`:
+https://plugins.omarchy.org/plugin.html?id=cschaba.omaipsum
 
-[mp]: https://github.com/HANCORE-linux/omarchy-plugin-marketplace
+[mp]: https://github.com/omacom/omarchy-plugin-marketplace
+
+Verification covers the exact snapshot that was reviewed, and is explicitly not
+a security audit. Plugins run unsandboxed, so what makes this one safe to
+install is a property of the repository rather than of anyone's approval.
 
 A listing points at **the repository, not a release**, so a reviewer sees
 whatever is on `main` at the moment they look. That is the sharper reason for
