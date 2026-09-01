@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.10] — 2026-09-01
+
 - OmaIpsum is listed on the Omarchy plugin marketplace; the docs say so
   instead of saying it has not been submitted.
 
