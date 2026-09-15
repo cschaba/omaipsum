@@ -388,9 +388,10 @@ readme_path = os.path.join(ROOT, "README.md")
 readme = open(readme_path, encoding="utf-8").read() if os.path.isfile(readme_path) else ""
 
 # The hash only means something while a CDN copy is actually in use. The README
-# does not embed one today, so enforcing it would fail an honest re-record with
-# advice about refreshing something nobody is serving. Gated on the embed, the
-# check arrives with the thing it protects and stays quiet until then.
+# embeds one now, so this is armed; it was written before the embed existed and
+# stayed quiet until it did, and it would go quiet again if the player were ever
+# taken out. Gated on the embed, the check can only fail while there is a CDN
+# copy to protect.
 embedded = "user-attachments/assets/" in readme
 
 if os.path.isfile(video) and embedded:
