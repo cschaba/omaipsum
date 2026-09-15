@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.12] — 2026-09-15
+
 - A corpus is held to the schema `corpora/README.md` documents before the panel
   will show it: the id has to match the filename it came from, a name and a
   blurb are one plain line inside a length the panel can draw, and `opening`
