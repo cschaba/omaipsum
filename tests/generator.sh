@@ -160,6 +160,20 @@ for (const file of FILES) {
   // disagreeing means a variant nobody can select.
   check(file + " id matches the filename", String(corpus.id), stem);
 
+  // The panel draws `name` and `blurb`, and acceptCorpus() in BarWidget.qml
+  // refuses a corpus whose name runs past 32 characters or blurb past 160, or
+  // whose either carries a `<`, a `>` or a line break — a corpus does not get
+  // to decide how wide the panel is, and a string that looks like markup is
+  // one Qt will render as markup. A shipped corpus that broke those rules
+  // would be dropped by the widget at runtime and listed as unreadable, so
+  // they are checked here, where the failure is a red line in CI instead.
+  const plain = (value, limit) => {
+    const text = String(value);
+    return text.length > 0 && text.length <= limit && !/[<>\r\n]/.test(text);
+  };
+  check(file + " name is one short plain line", plain(corpus.name, 32), true);
+  check(file + " blurb is one plain line", plain(corpus.blurb, 160), true);
+
   check(file + " opening is an array", Array.isArray(corpus.opening), true);
   const badOpening = (corpus.opening || []).filter(w => !/^[a-z]+$/.test(String(w)));
   check(file + " opening is plain lowercase words", badOpening.join(",") || "(none)", "(none)");

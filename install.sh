@@ -28,6 +28,26 @@ CHORD="SUPER + ALT + I"
 
 say() { echo "  $*"; }
 
+# --- 0. is this even an Omarchy machine? ------------------------------------
+#
+# Asked before anything is written, not after. This check used to live with the
+# registration below, which meant a run on a machine without Omarchy created
+# ~/.config/omarchy/plugins and a symlink into it *first* and only then stopped
+# — leaving two things behind on the one path where the script does nothing
+# useful. The rule at the top of this file is that it writes nothing outside
+# omaipsum's own directories, and a failure path is exactly where a rule like
+# that earns its keep.
+
+if ! command -v omarchy >/dev/null 2>&1; then
+  echo
+  say "! omarchy was not found on PATH."
+  say "  omaipsum is an Omarchy plugin, and registering it means writing"
+  say "  ~/.config/omarchy/shell.json — a file omarchy owns and this script"
+  say "  will not touch itself. Install Omarchy, then re-run:"
+  say "      $SOURCE_DIR/install.sh"
+  exit 1
+fi
+
 # --- 1. the plugin directory ------------------------------------------------
 #
 # A symlink and not a copy: the checkout stays the only copy of the code, so an
@@ -61,16 +81,6 @@ else
 fi
 
 # --- 2. registration, through omarchy's own commands ------------------------
-
-if ! command -v omarchy >/dev/null 2>&1; then
-  echo
-  say "! omarchy was not found on PATH."
-  say "  omaipsum is an Omarchy plugin, and registering it means writing"
-  say "  ~/.config/omarchy/shell.json — a file omarchy owns and this script"
-  say "  will not touch itself. Install Omarchy, then re-run:"
-  say "      $SOURCE_DIR/install.sh"
-  exit 1
-fi
 
 # The shell keeps its own list of what is installed, and a directory that
 # appeared after it started is not on it. Quiet and best-effort: with no shell

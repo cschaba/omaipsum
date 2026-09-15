@@ -285,73 +285,140 @@ the branch rule above: `main` is the public face, not a workspace.
 
 ### Promises a submission would make
 
-The submission form is a checklist, and every item on it is a claim about how
-the plugin behaves, made to people who cannot check it themselves. What
-OmaIpsum could tick today, and what keeps each one true afterwards:
+The submission form is a checklist of **five** items, every one of them
+`required: true` and every one a claim about how the plugin behaves, made to
+people who cannot check it themselves. Verbatim from the marketplace's
+`.github/ISSUE_TEMPLATE/submit-plugin.yml`, with what makes each true here and
+what keeps it true afterwards:
 
-- **"Does not overwrite user configuration without explicit consent."**
-  True, and worth stating precisely rather than grandly. OmaIpsum writes
-  nothing outside its own directories *itself*. Installing it does change one
-  file outside them — `~/.config/omarchy/shell.json` — because `install.sh`
-  calls `omarchy plugin enable` and `omarchy bar put`, and Omarchy records the
-  widget in its own config. That is the consent: running the installer is the
-  request. See *Stay inside the plugin* above.
+1. **"The repository is public and contains installation and removal
+   instructions."** True: public, and the README documents both directions.
+   `uninstall.sh` has to keep working, and keep leaving `bindings.lua` alone.
+2. **"I have documented the plugin license and any external dependencies."**
+   MIT, in `LICENSE` and in the manifest; `wl-clipboard` is the only external
+   dependency. A new one belongs in the README's Requirements table and in the
+   startup probe beside `wl-copy`, not only in the code that calls it.
+3. **"I confirm that I own or have permission to submit this plugin and its
+   preview assets."** The corpora carry per-file `attribution` and `source`,
+   `corpora/README.md` sets a conservative rule, and the screenshots and the
+   screencast are the maintainer's own. This is the one item no review of the
+   code can settle for you — it is a provenance claim, and it is yours.
+4. **"The plugin does not overwrite user configuration without explicit
+   consent."** True, and worth stating precisely rather than grandly. OmaIpsum
+   writes nothing outside its own directories *itself*. Installing it does
+   change one file outside them — `~/.config/omarchy/shell.json` — because
+   `install.sh` calls `omarchy plugin enable` and `omarchy bar put`, and
+   Omarchy records the widget in its own config. That is the consent: running
+   the installer is the request. See *Stay inside the plugin* above.
 
-  The flat claim "writes nothing outside its own directories" was in the README
-  and here, next to instructions that plainly registered a bar widget. A
-  reviewer reading both would have caught the contradiction, and been right to
-  wonder what else was overstated.
-- **"The repository is public and contains installation and removal
-  instructions."** True of the GitHub mirror, which is what a listing would
-  point at; the README documents both directions. `uninstall.sh` has to keep
-  working, and keep leaving `bindings.lua` alone.
-- **"Documented the licence and any external dependencies."** MIT, and
-  `wl-clipboard` is the only external dependency. A new one belongs in the
-  README's Requirements table and in the startup probe beside `wl-copy`, not
-  only in the code that calls it.
+   The flat claim "writes nothing outside its own directories" was in the
+   README and here, next to instructions that plainly registered a bar widget.
+   A reviewer reading both would have caught the contradiction, and been right
+   to wonder what else was overstated.
+5. **"I understand that approval is for listing and is not a security
+   review."** Accepted by submitting, and worth internalising rather than
+   ticking: see *What a listing is not* below.
 
 Whoever submits it is making these claims on the project's behalf, so check
 them against the code on the day rather than against this list.
 
 ### What the static scan reads
 
-Every `.sh`, `.js`, `.mjs`, `.qml`, `.py`, `.rb`, `.pl`, `.lua`, `.yml`,
-`.yaml`, `.toml`, `.desktop`, `.service`, `.sudoers`, `.bash`, `.fish`, `.zsh`
-in the repository, plus extensionless files under `bin/` and `scripts/`, plus
-the root README.
+Read out of the marketplace's own `scripts/security-baseline-scope.mjs` and
+confirmed by running it — the file list below is what its
+`resolveSecuritySnapshot()` returned for this repository at `dfc986b` on
+2026-09-15, not a guess from the prose.
 
-**Excluded:** anything under `tests/`, `docs/`, `.github/`, `spec/`, `specs/`,
-`fixtures/`, `coverage/`, `node_modules/`.
+**Directory exclusions are applied first**, and they beat every rule below
+except a manifest entry point: any path with `.github`, `coverage`, `docs`,
+`fixtures`, `node_modules`, `spec`, `specs`, `test` or `tests` as a *directory*
+component is out.
 
-In this repository that means `install.sh`, `uninstall.sh`,
-`scripts/release.sh`, `Ipsum.js`, `BarWidget.qml` and `README.md` are read;
-`tests/` is not, `.github/` is not, and neither are the corpora, which are
-`.json`. There is no `bin/` and no `lib/` here. Worth knowing before adding
-anything that shells out, invokes a package manager, or asks for `sudo`.
+What is left is read if it matches **any** of:
 
-The exclusion list names `.github/`, which is where the workflow now lives, so
-the CI file is not read. It was in `.gitea/workflows` until #19 and was read
-there — worth remembering if it ever moves back, because what a scanned CI file
-does counts the same as what a shipped script does.
+- one of these extensions — `.bash` `.cjs` `.desktop` `.fish` `.js` `.lua`
+  `.mjs` `.pl` `.py` `.qml` `.rb` `.service` `.sh` `.sudoers` `.toml` `.yaml`
+  `.yml` `.zsh`;
+- it is the **root README**, under any extension;
+- it is committed **executable** (mode `100755`), wherever it lives;
+- it has **no extension at all**, wherever it lives — not only under `bin/` and
+  `scripts/`;
+- its basename contains `install`, `installer`, `setup` or `uninstall`;
+- it is an **`entryPoints` path** from the validated manifest, which is forced
+  in *even from an excluded directory*.
 
-### Capabilities it will flag
+In this repository that is exactly seven files:
 
-These are detected and reported to the reviewer. Of OmaIpsum:
+```
+BarWidget.qml  Ipsum.js  LICENSE  README.md
+install.sh  scripts/release.sh  uninstall.sh
+```
 
-- `installer` — `install.sh`, `uninstall.sh` and `scripts/release.sh`.
-- `remote-build` — the `git clone` and the `omarchy plugin add <url>` in the
-  README.
-- `privilege` and `package-manager` — **neither, now.** Nothing in the plugin
-  runs `sudo` or a package manager: `install.sh` prints
-  `omarchy pkg add wl-clipboard` when `wl-copy` is missing and installs
-  nothing, and the widget execs exactly two binaries, `wl-copy` and
-  `omarchy-notification-send`. The one file that does install packages is the
-  CI workflow, with its `sudo apt-get install` — and moving it from
-  `.gitea/workflows` to `.github/workflows` took it out of the scan, because
-  the exclusion list names `.github/` and did not name `.gitea/`. That was a
-  side effect of needing a runner rather than the reason for the move, but it
-  is the honest current position: a scan of this repository should report
-  neither capability.
+`LICENSE` is in the list because it has no extension, which is worth knowing
+before putting anything else at the root without one. `tests/smoke.sh` and
+`tests/generator.sh` are committed executable and would qualify twice over, but
+the directory exclusion is applied first and takes them out. The corpora are
+`.json` and are read by nothing. `manifest.json` is read as the manifest, not
+as scanned source.
 
-A **new** capability appearing in a diff means the plugin started doing
-something categorically different, and deserves a second look before it ships.
+The exclusion list names `.github/`, which is where the workflows live, so
+`ci.yml` and `release.yml` are not read. They were in `.gitea/workflows` until
+#19 and were read there — worth remembering if they ever move back, because
+what a scanned CI file does counts the same as what a shipped script does.
+
+### What the scan reports today
+
+Run against `dfc986b` on 2026-09-15 with the marketplace's own scanner. The
+verdict is `outcome: needs-fixes`, `disposition: review-required`,
+`enforcementMode: selective`, **`blocksApproval: false`** — a listing is not
+refused over any of it.
+
+**Three capabilities**, all correct and none of them a defect:
+
+- `installer` — `install.sh:1` and `uninstall.sh:1`, matched on the filename.
+- `remote-build` — the `git clone` in the README and `git fetch` in
+  `scripts/release.sh:185`.
+- `package-manager` — `README.md:55` and `install.sh:163`, both of which *tell
+  the user* to run `omarchy pkg add wl-clipboard` and neither of which runs
+  anything. The rule is a literal regex, and for the root README every line is
+  treated as a command, so it cannot tell advice from execution.
+
+  **This is accepted rather than worked around.** Rewording two lines so the
+  string does not appear would trade good documentation for a tidier report,
+  and the report is not a failure. `docs/DEVOPS.md` carries the note to paste
+  into the submission form's *Maintainer notes* saying so. An earlier version
+  of this file predicted the capability would not be reported; it is.
+- `privilege` — **not** reported, and that is a property worth keeping. Nothing
+  in the plugin runs `sudo` or a package manager: `install.sh` prints the
+  `omarchy pkg add` line and installs nothing, and the widget starts three
+  binaries and no shell — `wl-copy` and `omarchy-notification-send` through a
+  `Process`, `omarchy-launch-browser` through `execDetached`, each with a
+  constant argv array. The one file that really does install packages is the CI
+  workflow, and `.github/` is outside the scan.
+
+**One finding**, `remote-git-execution-unpinned`, on `scripts/release.sh:185`
+and `:254`. It is a false positive: the scanner pairs a `git fetch` with a
+later "execution sink" in the same file, the fetch targets `$REMOTE` rather
+than a submission repository, and the sink is `bash -n`, which parses a local
+file and executes nothing. `scripts/release.sh` is a maintainer tool that no
+user runs and that the release tarball excludes.
+
+A **new** capability or finding appearing in a diff means the plugin started
+doing something categorically different, and deserves a second look before it
+ships.
+
+### What a listing is not
+
+The publish page says it plainly: **the marketplace validates listings, not
+plugin security**, and **plugins run unsandboxed**. A listed plugin has had its
+manifest validated, its repository confirmed public, its author's checkboxes
+recorded, and a regex scan run over seven files. Once installed, its QML runs
+inside `omarchy-shell` with the user's full privileges — same filesystem, same
+D-Bus session, same ability to exec anything on `PATH`.
+
+What makes this one safe to install is therefore a property of the repository
+and not of anyone's approval: a small surface, three binaries with constant
+argv, no network, no writes, no privilege. The thing a user is really trusting
+is that it stays that way — which is what `remote-build` is quietly about,
+because a listing points at a repository and what installs is whatever is on
+`main` at that moment, not the commit anyone reviewed.

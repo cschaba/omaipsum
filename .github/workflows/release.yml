@@ -64,10 +64,25 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref }}
           fetch-depth: 0
 
+      # The tag arrives through env: rather than as ${{ }} inside the script.
+      # A ${{ }} expression is pasted into the shell *before* the shell runs,
+      # so the regex on the next line would be judging a string that had
+      # already had its chance to execute — and git's ref-name rules do allow a
+      # backtick, a semicolon and a `$(`. Nobody but a maintainer can push a
+      # tag or dispatch this workflow, and this job holds `contents: write`
+      # that such a person already has, so this was never a way in; it is one
+      # fewer place where the order of validation and execution has to be
+      # argued about.
+      #
+      # The other ${{ }} in this file expand steps.version.outputs.*, which are
+      # written below out of a tag this step has already matched against
+      # ^vX.Y.Z$, so they carry nothing the regex would have rejected.
       - name: Work out the version
         id: version
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          tag="$TAG"
           [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] \
             || { echo "::error::'$tag' is not a vX.Y.Z tag"; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"

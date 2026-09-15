@@ -247,9 +247,12 @@ than merely eventually correct.
 
 Worth being clear-eyed about what the marketplace does and does not do: it
 validates the listing, not the plugin. Plugins run unsandboxed. Everything that
-makes OmaIpsum safe to install is a property of this repository — it writes
-nothing outside its own directories, runs no package manager, needs no
-privileges — and not of anyone's review.
+makes OmaIpsum safe to install is a property of this repository — the widget
+writes no files and makes no network requests, nothing here runs a package
+manager or asks for a privilege, and the one file outside its own directories
+that installing changes is `shell.json`, written by Omarchy's own commands
+because registering a widget is what the installer was run to do — and not of
+anyone's review.
 
 A listing points at **the repository, not a release**, so a reviewer sees
 whatever is on `main` at the moment they look, and so does anyone who follows
@@ -263,6 +266,45 @@ would report are in [../AGENTS.md](../AGENTS.md) under *Publishing* — they
 live there because keeping them true is a constraint on every change, not a
 step in a release. Check them against the code on the day rather than against
 any list.
+
+### The note to paste into "Maintainer notes"
+
+The scan reports three capabilities and one finding against this repository,
+and every one of them is expected. The submission form has a *Maintainer notes*
+field for exactly this, so the reviewer reads the explanation beside the report
+rather than guessing at it. The current text, kept here so it does not have to
+be rewritten under time pressure:
+
+> OmaIpsum's static scan reports three capabilities and one finding. All four
+> are expected and none is a defect:
+>
+> - `package-manager` (README.md:55, install.sh:163) — both lines *tell the
+>   user* to run `omarchy pkg add wl-clipboard` when `wl-copy` is missing.
+>   Neither runs it, and the plugin installs nothing. The rule matches the
+>   literal string, and for a README it treats every line as a command, so it
+>   cannot tell advice from execution.
+> - `installer` (install.sh, uninstall.sh) — the plugin ships an installer and
+>   its reverse. install.sh symlinks the checkout into
+>   ~/.config/omarchy/plugins and registers the widget through
+>   `omarchy plugin enable` and `omarchy bar put`. It edits no file of the
+>   user's: the optional Hyprland keybinding is printed for them to paste.
+> - `remote-build` (README.md, scripts/release.sh:185) — the `git clone` in the
+>   install instructions, and a `git fetch` in the maintainer-only release
+>   script.
+> - `remote-git-execution-unpinned` (scripts/release.sh:185 and :254) — a false
+>   positive. The fetch targets `$REMOTE`, which defaults to `origin`, and the
+>   "execution sink" it is paired with is `bash -n`, which parses local files
+>   and executes nothing. scripts/release.sh is a maintainer tool: no user runs
+>   it, and the release tarball excludes it.
+>
+> The widget starts three binaries, each with a constant argv array and no
+> shell between it and them — wl-copy, omarchy-notification-send and
+> omarchy-launch-browser. It makes no network requests and writes no files.
+
+Regenerate the claims rather than trusting this paragraph: the file list, the
+capabilities and the finding are all reproducible against the current commit
+with the marketplace's own scanner, and *What the scan reports today* in
+[../AGENTS.md](../AGENTS.md) records how and when that was last done.
 
 ## The screencast, and its copy on GitHub's CDN
 
