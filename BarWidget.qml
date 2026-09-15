@@ -82,6 +82,25 @@ Panel {
     }
   }
 
+  // Shown to the user rather than generated from: one line, within a length
+  // the panel can draw, and carrying nothing that Qt's AutoText would read as
+  // markup. `<` and `>` are what turn a string into rich text, and rich text
+  // is what fetches an <img src="http://…">.
+  function plainField(value, limit) {
+    var text = String(value)
+    return text.length > 0 && text.length <= limit && !/[<>\r\n]/.test(text)
+  }
+
+  // The corpus vocabulary rule, in one place: plain lowercase words, no
+  // punctuation, no markup, no spaces. corpora/README.md states it and
+  // tests/generator.sh holds the shipped files to it.
+  function lowercaseWords(list) {
+    for (var i = 0; i < list.length; i++)
+      if (!/^[a-z]+$/.test(String(list[i])))
+        return false
+    return true
+  }
+
   function acceptCorpus(fileName, raw) {
     var corpus = null
     try {
@@ -97,17 +116,54 @@ Panel {
       return
     }
 
-    // corpora/README.md promises every word matches ^[a-z]+$, and until now
-    // nothing checked at runtime — the tests check the six files shipped here,
-    // which says nothing about the seventh a user drops in. Enforcing it is
-    // what makes "the generator adds all punctuation" a property rather than a
-    // convention, and it keeps anything shaped like markup out of the panel
-    // even if a Text somewhere loses its textFormat again.
-    for (var w = 0; w < corpus.words.length; w++) {
-      if (!/^[a-z]+$/.test(String(corpus.words[w]))) {
-        root.rejectCorpus(fileName)
-        return
-      }
+    // corpora/README.md documents a shape, and until 0.1.4 nothing checked it
+    // at runtime — the tests hold the six files shipped here to it, which says
+    // nothing about the seventh a user drops in, and dropping one in is what
+    // the README invites. Enforcing it is what makes "the generator adds all
+    // punctuation" a property rather than a convention, and it keeps anything
+    // shaped like markup out of the panel even if a Text somewhere loses its
+    // textFormat again — which matters most for the two sinks that are not
+    // ours to set: qs.Ui's Dropdown draws the name, and a notification body
+    // carries it out of the process entirely.
+    //
+    // The id is the identity the dedupe below, the picker and the `variant`
+    // setting all key on, and the schema pins it to the filename stem. Left
+    // unchecked, a file could claim a shipped variant's id and — the reads
+    // land in whatever order they finish — be the one that wins, showing its
+    // own name for a variant the user asked for by another.
+    if (String(corpus.id) !== String(fileName).replace(/\.json$/i, "")) {
+      root.rejectCorpus(fileName)
+      return
+    }
+
+    // A name is one short label and a blurb one line. The caps are what the
+    // panel can draw: without them a corpus can be a banner, and a picker
+    // entry that pushes the panel wider is a corpus deciding what the UI
+    // looks like.
+    if (!root.plainField(corpus.name, 32)) {
+      root.rejectCorpus(fileName)
+      return
+    }
+    var blurb = corpus.blurb === undefined || corpus.blurb === null ? "" : String(corpus.blurb)
+    if (blurb !== "" && !root.plainField(blurb, 160)) {
+      root.rejectCorpus(fileName)
+      return
+    }
+
+    // `opening` is emitted verbatim at the head of the generated text —
+    // Ipsum.js copies it through without touching it — so it is words in the
+    // same sense that `words` is, and answers to the same rule. The 0.1.4 fix
+    // checked `words` and stopped there, leaving the one field that reaches the
+    // preview untouched by the generator as the way around it.
+    var opening = corpus.opening === undefined || corpus.opening === null ? [] : corpus.opening
+    if (!Array.isArray(opening) || !root.lowercaseWords(opening)) {
+      root.rejectCorpus(fileName)
+      return
+    }
+
+    if (!Array.isArray(corpus.words) || !root.lowercaseWords(corpus.words)) {
+      root.rejectCorpus(fileName)
+      return
     }
 
     var next = root.corpora.slice(0)
@@ -173,7 +229,17 @@ Panel {
       root.version = manifest && manifest.version ? String(manifest.version) : ""
       // Same reasoning as the version: manifest.json already carries it, and a
       // URL written twice is a URL that will disagree with itself.
-      root.homepage = manifest && manifest.homepage ? String(manifest.homepage) : ""
+      //
+      // Checked for its scheme because this is the only string in the plugin
+      // that is handed to another program as an argument. It comes out of our
+      // own manifest, so this is not a boundary hostile input crosses today —
+      // but that manifest sits in the user's plugin directory where anything
+      // on the machine can edit it, and omarchy-launch-browser passes what it
+      // is given to the browser, which opens a file:// URL as readily as a
+      // homepage. An unusable homepage costs the footer its link and nothing
+      // else.
+      var homepage = manifest && manifest.homepage ? String(manifest.homepage) : ""
+      root.homepage = /^https?:\/\//.test(homepage) ? homepage : ""
     } catch (e) {
       root.version = ""
     }
@@ -527,8 +593,9 @@ Panel {
   }
 
   // A Process rather than Util.execArgv: detaching is not needed here, and
-  // execArgv would put a bash between the widget and the only two binaries it
-  // is meant to run.
+  // execArgv would put a bash between the widget and the two binaries it runs
+  // this way — wl-copy and omarchy-notification-send. The third and last one
+  // it can start, omarchy-launch-browser, goes through execDetached below.
   // omarchy-launch-browser rather than xdg-open: it is what Omarchy's own
   // plugins use, so the link lands in whatever browser the user actually
   // configured. execDetached because nothing here waits on a browser.

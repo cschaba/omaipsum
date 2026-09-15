@@ -46,6 +46,19 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Spelled out rather than inherited. Nothing here needs the token for anything
+# but the checkout, and the repository default — read, today — is a settings
+# page anyone with admin can change, silently and without a diff. release.yml
+# names its `contents: write` for the opposite reason; this is the same habit
+# pointed the other way.
+#
+# The fork-PR case is already safe for a different reason: the trigger is
+# `pull_request`, not `pull_request_target`, so a fork's job gets a read-only
+# token and no secrets whatever this block says. It runs the PR's own tests/
+# scripts — that is the job — and the blast radius is the ephemeral runner.
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash

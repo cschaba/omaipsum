@@ -6,6 +6,25 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- A corpus is held to the schema `corpora/README.md` documents before the panel
+  will show it: the id has to match the filename it came from, a name and a
+  blurb are one plain line inside a length the panel can draw, and `opening`
+  answers to the same lowercase-word rule as `words`. A variant file you did
+  not write can no longer take a shipped variant's place in the picker, decide
+  how wide the panel is, or put markup where something will draw it.
+- The README describes the clicks the widget actually has: right-click opens
+  the pulldown, and left-click copies straight to the clipboard — replacing
+  what was on it, with no confirmation.
+- `install.sh` looks for Omarchy before it creates anything, so a run on a
+  machine without it no longer leaves a plugin directory and a dangling
+  symlink behind.
+- The homepage the pulldown's version line opens has to be an http(s) URL.
+- CI declares a read-only token instead of inheriting whatever the repository
+  default is set to, and the release workflow validates a tag before the shell
+  it is pasted into can run it.
+- AGENTS.md's account of the marketplace scan matches the scanner: five
+  checklist items rather than three, the rules that actually select the seven
+  files it reads, and the three capabilities it really reports.
 - The README plays the screencast where it used to link it. The video is still
   in the repository and still the master copy; the test suite now refuses a
   video that changed without its copy on GitHub's CDN being refreshed.

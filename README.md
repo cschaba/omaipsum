@@ -1,10 +1,11 @@
 # OmaIpsum
 
-Placeholder text from the bar, for [Omarchy 4](https://omarchy.org). Click the
-document icon, pick how much of what you want, read exactly what you are about
-to get, and copy it. It is for anyone who fills a layout with filler text often
-enough to be tired of opening a website for it — designers, front-end
-developers, anyone writing a template.
+Placeholder text from the bar, for [Omarchy 4](https://omarchy.org).
+Right-click the bar icon, pick how much of what you want, read exactly what you
+are about to get, and copy it — or left-click it and skip straight to the
+clipboard. It is for anyone who fills a layout with filler text often enough to
+be tired of opening a website for it — designers, front-end developers, anyone
+writing a template.
 
 ![The OmaIpsum pulldown: a variant picker, a count, words/sentences/paragraphs, and a live preview](docs/pulldown.png)
 
@@ -93,9 +94,19 @@ way.
 
 ## Usage
 
-Click the document icon in the bar — or press your keybinding, if you added
+**Right-click** the icon in the bar — or press your keybinding, if you added
 one. The panel opens on a fresh sample every time, in whatever defaults you
 configured; it does not carry the last session's settings into the next one.
+
+**Left-click** it and there is no panel at all: it generates your configured
+defaults, copies them, and sends the same notification saying what landed. That
+is the whole point of it — filler text in one click — but it does replace
+whatever was on your clipboard, with no confirmation and no undo. Worth knowing
+before you put the widget next to something you click by accident. The icon's
+tooltip says the same thing in fewer words.
+
+Middle-click does nothing, deliberately: both actions already have a button, so
+a third would be a guess at which one you meant.
 
 Top to bottom, it is: the **variant** picker with a one-line description of the
 variant underneath, an **amount** and a **unit** (words, sentences,
