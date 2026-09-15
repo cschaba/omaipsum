@@ -6,6 +6,10 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- The README plays the screencast where it used to link it. The video is still
+  in the repository and still the master copy; the test suite now refuses a
+  video that changed without its copy on GitHub's CDN being refreshed.
+
 ## [0.1.11] — 2026-09-01
 
 - A preview image for the marketplace listing, and a fresh screenshot in the

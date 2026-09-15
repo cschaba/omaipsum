@@ -8,6 +8,12 @@ developers, anyone writing a template.
 
 ![The OmaIpsum pulldown: a variant picker, a count, words/sentences/paragraphs, and a live preview](docs/pulldown.png)
 
+A narrated minute of it working plays below on GitHub; the file itself is
+[`docs/screencast.mp4`](docs/screencast.mp4) in the repository, which is what a
+clone gets.
+
+[Watch the screencast (MP4, 2 MB)](https://github.com/user-attachments/assets/8698a864-c0dd-4d38-b3c9-f54f90c3836b)
+
 Six text variants ship with it: the Latin one everybody knows, and five that
 are easier to read past. You choose words, sentences or paragraphs, and you get
 exactly the number you asked for.
@@ -214,7 +220,7 @@ OmaIpsum is a directory of QML, a JavaScript generator and two shell scripts.
 | [AGENTS.md](AGENTS.md) | the conventions a change is expected to follow |
 | [CHANGELOG.md](CHANGELOG.md) | what changed when |
 | [corpora/README.md](corpora/README.md) | the corpus schema for a variant |
-| [docs/screencast.mp4](docs/screencast.mp4) | a narrated minute of it working |
+| [docs/screencast.mp4](docs/screencast.mp4) | the screencast itself — the copy the player at the top is made from |
 
 ## How this was built
 

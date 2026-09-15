@@ -266,23 +266,34 @@ any list.
 
 ## The screencast, and its copy on GitHub's CDN
 
-`docs/screencast.mp4` is in the repository and is the master. The README does
-**not** embed it today: a thumbnail linking to the file looked like a player and
-behaved like a download, which is a worse promise than making none, so the
-README carries the still screenshot and lists the video among the docs.
+`docs/screencast.mp4` is in the repository and is the master. The README embeds
+it as a player near the top, and that player is served from a **second copy** of
+the same file on GitHub's CDN — refreshed by a different route from the one in
+git, which is the whole hazard and the reason for the check below.
 
-An inline player is possible and is described below, because it needs a second
-copy of the same file on GitHub's CDN — refreshed by a different route from the
-one in git, which is the whole hazard and the reason for the check.
+An earlier attempt at this was a thumbnail linking to the file: it looked like a
+player and behaved like a download, which is a worse promise than making none.
+That is why the embed is the form below and not an image.
 
-GitHub renders a player only for an uploaded attachment. Checked, rather than
-assumed from the documentation, which does not mention READMEs at all:
+GitHub renders a player only for an uploaded attachment. Checked against the
+markdown API with the real URL, rather than assumed from the documentation,
+which does not mention READMEs at all:
 
 - A `<video>` tag is **stripped** by GitHub's sanitiser. Both an attachment URL
   and a repo-relative path render as an empty paragraph.
 - A plain markdown **link** to `https://github.com/user-attachments/assets/<uuid>`
   is rewritten into a `<video>` element pointing at a signed
   `private-user-images.githubusercontent.com/….mp4` URL. That is the player.
+- The link's **text is discarded** by that rewrite, so it costs nothing on
+  GitHub and is all a reader gets anywhere else — the Gitea mirror, an editor's
+  preview, a plain markdown viewer. Hence `[Watch the screencast (MP4, 2 MB)]`
+  rather than a bare URL: same player, a legible link everywhere else.
+- Image syntax, `![alt](<attachment URL>)`, renders an `<img>` whose source is
+  the `.mp4` — a broken image, not a player. The link form is the only one that
+  works.
+- The player's caption comes from the **original filename at upload time**, not
+  from the README, which is another reason to upload the file under its own
+  name: the summary line reads `screencast.mp4`.
 
 Video attachments are capped at 10 MB on a free plan and 100 MB on a paid one.
 
@@ -316,12 +327,13 @@ There is no API for markdown attachments, so the upload is a manual step:
    `sha256sum docs/screencast.mp4 | awk '{print $1}' > docs/screencast.mp4.sha256`
 
 Step 4 is not bookkeeping. `tests/smoke.sh` compares that hash against the
-committed file and fails if they differ — but only once `README.md` actually
-contains a `user-attachments` URL, so the check arrives with the thing it
-protects rather than failing an honest re-record today. That is what stops step
-2 being forgotten: the README would otherwise keep playing the old take
-and nobody rereads their own README often enough to catch it. The suite also
-fails if a `<video>` tag appears, because that renders as nothing at all.
+committed file and fails if they differ. The check is gated on `README.md`
+actually containing a `user-attachments` URL — it is **armed now**, and would
+disarm itself again if the embed were ever removed, so it can only fail while
+there is a CDN copy to protect. That is what stops step 2 being forgotten: the
+README would otherwise keep playing the old take and nobody rereads their own
+README often enough to catch it. The suite also fails if a `<video>` tag
+appears, because that renders as nothing at all.
 
 The test cannot verify the CDN copy holds the same bytes — the URL is signed
 and expires, so it is not fetchable from a test. It proves the repository copy
