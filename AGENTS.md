@@ -5,6 +5,19 @@ place that describes them: [CLAUDE.md](CLAUDE.md) is a pointer to this file,
 nothing more. The reasoning behind the code is in
 [DEVELOPMENT.md](DEVELOPMENT.md).
 
+## Shared memory
+
+General lessons that apply across the maintainer's projects — verification
+habits, git and release conventions, shell scripting traps, Omarchy plugin
+pitfalls, publishing and security — live outside this repository in
+`~/AI-Memory/`. If that directory exists on your machine, read
+`~/AI-Memory/README.md` and the topic relevant to the task before starting.
+
+Project-specific rules belong in this file. When a decision made here is
+general — it would hold for other projects too — add it to `~/AI-Memory` as
+well, or correct it there if it has changed or proved wrong. Review that memory
+from time to time rather than letting it go stale.
+
 ## Where things stand
 
 OmaIpsum is an **Omarchy plugin** (Quickshell/QML, loaded by `omarchy-shell`)
