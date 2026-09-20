@@ -434,8 +434,12 @@ twice.
 7. Checks for `wl-copy` and, if it is missing, suggests
    `omarchy pkg add wl-clipboard`. It installs nothing — no package manager
    runs from this repository.
-8. Prints the optional keybinding line for you to paste, and says so if the
-   chord already appears in `bindings.lua`.
+8. Prints the optional keybinding line for you to paste, with the chord left
+   blank — it suggests none, because which chords are free is a property of
+   the machine and not of this plugin (#34). It prints
+   `omarchy menu keybindings --print` beside it, which is the part the script
+   knows and the user may not, and says nothing at all if a binding for the
+   toggle command is already in `bindings.lua`.
 9. Reminds you to `omarchy restart shell`, because the shell reads a plugin's
    QML once at startup.
 

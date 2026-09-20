@@ -70,21 +70,32 @@ omarchy restart shell
 `omarchy-shell` reads a plugin's QML once at startup and keeps it for the life
 of the process, so a restart is also how you see any later edit.
 
-### The keybinding, which you add yourself
+### The keybinding, which you choose and add yourself
 
 The pulldown opens from its bar icon. If you want a key for it as well,
-`install.sh` **prints** the line rather than writing it:
+`install.sh` **prints** the line rather than writing it — with the chord left
+for you to fill in:
 
 ```lua
 -- in ~/.config/hypr/bindings.lua
 -- omaipsum
-o.bind("SUPER + ALT + I", "Lorem ipsum", "omarchy-shell cschaba.omaipsum.widget toggle")
+o.bind("YOUR CHORD HERE", "Lorem ipsum", "omarchy-shell cschaba.omaipsum.widget toggle")
 ```
 
 followed by `hyprctl reload`. OmaIpsum never edits your Hyprland config
-itself — it prints the line and you paste it. If `SUPER + ALT + I` already
-appears in that file it says so, and points you at
-`omarchy menu keybindings --print` to find a free chord.
+itself — it prints the line and you paste it.
+
+**It suggests no chord of its own**, deliberately. Which chords are free is a
+property of your machine rather than of this plugin: Omarchy's own defaults are
+dense, and whatever you have added sits on top of them. A suggested chord would
+be wrong on somebody's machine the day it was written and wrong on more of them
+later — and a chord that silently loses to an existing binding makes the plugin
+look broken rather than the binding look taken. To see what is already spoken
+for before you pick:
+
+```bash
+omarchy menu keybindings --print
+```
 
 The one file outside OmaIpsum's own directories that changes is
 `~/.config/omarchy/shell.json`, and OmaIpsum does not write it: `install.sh`

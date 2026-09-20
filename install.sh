@@ -23,8 +23,6 @@ BINDINGS="$HOME/.config/hypr/bindings.lua"
 # `ipcTarget`), and Ui/Panel.qml gives that handler open/close/toggle. So the
 # pulldown is addressed by name, not through the shell's generic surface toggle.
 TOGGLE_CMD="omarchy-shell cschaba.omaipsum.widget toggle"
-# I for ipsum, and free in Omarchy's own defaults at the time of writing.
-CHORD="SUPER + ALT + I"
 
 say() { echo "  $*"; }
 
@@ -173,30 +171,39 @@ else
   say "      omarchy pkg add wl-clipboard"
 fi
 
-# --- 4. the keybinding, which is yours to add -------------------------------
+# --- 4. the keybinding, which is yours to choose and to add ------------------
+#
+# No chord is suggested here, and that is the point of #34. This script used to
+# propose SUPER + ALT + I, picked because it was free in Omarchy's own defaults
+# on the machine it was written on — which is exactly as far as such a claim
+# ever reaches. Omarchy's defaults are dense, users add their own on top, and a
+# suggested chord is either already taken (so the advice is wrong) or about to
+# be (so it is wrong later). Worse, a printed chord reads as *the* keybinding:
+# someone pastes it, it silently loses to an existing bind, and the plugin
+# looks broken.
+#
+# So the line is printed with the chord left out. The user picks one, and the
+# command that lists what is already taken is printed next to it — which is the
+# one thing this script genuinely knows that the user might not.
 
 echo
 if [[ -f $BINDINGS ]] && grep -qF "$TOGGLE_CMD" "$BINDINGS"; then
   say "✓ a keybinding for the pulldown is already in $BINDINGS"
 else
-  say "The pulldown opens from its bar icon. If you want a key for it too —"
-  say "one step, in a file that belongs to you — add this to $BINDINGS:"
+  say "The pulldown opens on a right click of the bar icon; a left click"
+  say "copies straight away. If you want a key for the pulldown too — one"
+  say "step, in a file that belongs to you — add this to $BINDINGS, with a"
+  say "chord of your choosing:"
   echo
   echo "    -- omaipsum"
-  echo "    o.bind(\"$CHORD\", \"Lorem ipsum\", \"$TOGGLE_CMD\")"
+  echo "    o.bind(\"YOUR CHORD HERE\", \"Lorem ipsum\", \"$TOGGLE_CMD\")"
   echo
   say "then reload with:  hyprctl reload"
-
-  # Only your own overrides are checked, not Hyprland's whole binding list.
-  # The binding is optional and there is no omaipsum config to move the chord
-  # to, so a conflict here is worth a sentence, not an interrogation — and the
-  # file you are about to paste into is the one place a surprise would live.
-  if [[ -f $BINDINGS ]] && grep -qF "\"$CHORD\"" "$BINDINGS"; then
-    echo
-    say "! $CHORD already appears in that file. Pick a free chord in the line"
-    say "  above; Omarchy's own bindings are listed by:"
-    say "      omarchy menu keybindings --print"
-  fi
+  echo
+  say "omaipsum suggests no chord of its own: which ones are free is a"
+  say "property of your machine, not of this plugin. To see what is taken"
+  say "before you choose:"
+  say "      omarchy menu keybindings --print"
 fi
 
 # --- 5. what happens next ---------------------------------------------------
