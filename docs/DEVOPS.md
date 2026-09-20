@@ -273,29 +273,40 @@ The scan reports three capabilities and one finding against this repository,
 and every one of them is expected. The submission form has a *Maintainer notes*
 field for exactly this, so the reviewer reads the explanation beside the report
 rather than guessing at it. The current text, kept here so it does not have to
-be rewritten under time pressure:
+be rewritten under time pressure.
+
+**It names no line numbers, deliberately.** It used to, and 0.1.12's own edits
+moved both of them — `README.md:55` to `:62`, `install.sh:163` to `:173` —
+which would have handed a reviewer citations that did not match the report in
+front of them. The report always carries the current numbers; this note only
+has to say what those lines *are*.
 
 > OmaIpsum's static scan reports three capabilities and one finding. All four
 > are expected and none is a defect:
 >
-> - `package-manager` (README.md:55, install.sh:163) — both lines *tell the
->   user* to run `omarchy pkg add wl-clipboard` when `wl-copy` is missing.
->   Neither runs it, and the plugin installs nothing. The rule matches the
->   literal string, and for a README it treats every line as a command, so it
->   cannot tell advice from execution.
+> - `package-manager` (README.md and install.sh — the two lines your report
+>   names) — both of them *tell the user* to run `omarchy pkg add wl-clipboard`
+>   when `wl-copy` is missing. Neither runs it, and the plugin installs
+>   nothing: one is the sentence in the README's Install section describing
+>   what the installer suggests, the other is the `say` line in install.sh that
+>   prints that suggestion. The rule matches the literal string, and for a
+>   README it treats every line as a command, so it cannot tell advice from
+>   execution.
 > - `installer` (install.sh, uninstall.sh) — the plugin ships an installer and
 >   its reverse. install.sh symlinks the checkout into
 >   ~/.config/omarchy/plugins and registers the widget through
 >   `omarchy plugin enable` and `omarchy bar put`. It edits no file of the
 >   user's: the optional Hyprland keybinding is printed for them to paste.
-> - `remote-build` (README.md, scripts/release.sh:185) — the `git clone` in the
+> - `remote-build` (README.md, scripts/release.sh) — the `git clone` in the
 >   install instructions, and a `git fetch` in the maintainer-only release
 >   script.
-> - `remote-git-execution-unpinned` (scripts/release.sh:185 and :254) — a false
->   positive. The fetch targets `$REMOTE`, which defaults to `origin`, and the
->   "execution sink" it is paired with is `bash -n`, which parses local files
->   and executes nothing. scripts/release.sh is a maintainer tool: no user runs
->   it, and the release tarball excludes it.
+> - `remote-git-execution-unpinned` (the two scripts/release.sh lines in your
+>   report) — a false positive. The fetch targets `$REMOTE`, which defaults to
+>   `origin`, and only counts how far behind it the checkout is; nothing
+>   fetched is checked out, merged or run. The "execution sink" it is paired
+>   with is `bash -n`, which parses local files and executes nothing.
+>   scripts/release.sh is a maintainer tool: no user runs it, and the release
+>   tarball excludes it.
 >
 > The widget starts three binaries, each with a constant argv array and no
 > shell between it and them — wl-copy, omarchy-notification-send and

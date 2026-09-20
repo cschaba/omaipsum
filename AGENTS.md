@@ -381,20 +381,31 @@ what a scanned CI file does counts the same as what a shipped script does.
 
 ### What the scan reports today
 
-Run against `dfc986b` on 2026-09-15 with the marketplace's own scanner. The
-verdict is `outcome: needs-fixes`, `disposition: review-required`,
+Run against `50ffe4a` (0.1.12) on 2026-09-20 with the marketplace's own
+scanner, and against `dfc986b` (0.1.11) before it. Both return the same
+verdict: `outcome: needs-fixes`, `disposition: review-required`,
 `enforcementMode: selective`, **`blocksApproval: false`** — a listing is not
 refused over any of it.
 
+**Cited by what the lines say, not by line number.** An earlier version of this
+section named `README.md:55` and `install.sh:163`; the 0.1.12 edits moved the
+same two lines to 62 and 173, which is what a line number in a document about
+another tool's output is always going to do. The scanner's own report carries
+the current numbers — this is for recognising what it points at.
+
 **Three capabilities**, all correct and none of them a defect:
 
-- `installer` — `install.sh:1` and `uninstall.sh:1`, matched on the filename.
-- `remote-build` — the `git clone` in the README and `git fetch` in
-  `scripts/release.sh:185`.
-- `package-manager` — `README.md:55` and `install.sh:163`, both of which *tell
-  the user* to run `omarchy pkg add wl-clipboard` and neither of which runs
-  anything. The rule is a literal regex, and for the root README every line is
-  treated as a command, so it cannot tell advice from execution.
+- `installer` — `install.sh` and `uninstall.sh`, matched on the filename alone,
+  at line 1.
+- `remote-build` — the `git clone` in the README's Install section, and the
+  `git fetch` in `scripts/release.sh` that counts how far behind the remote a
+  checkout is.
+- `package-manager` — two hits, both of them text: the sentence in the README
+  saying `install.sh` suggests `omarchy pkg add wl-clipboard` rather than
+  installing anything, and the `say` line in `install.sh` that prints that
+  advice when `wl-copy` is missing. Neither runs it. The rule is a literal
+  regex, and for the root README every line is treated as a command, so it
+  cannot tell advice from execution.
 
   **This is accepted rather than worked around.** Rewording two lines so the
   string does not appear would trade good documentation for a tidier report,
@@ -409,11 +420,12 @@ refused over any of it.
   constant argv array. The one file that really does install packages is the CI
   workflow, and `.github/` is outside the scan.
 
-**One finding**, `remote-git-execution-unpinned`, on `scripts/release.sh:185`
-and `:254`. It is a false positive: the scanner pairs a `git fetch` with a
-later "execution sink" in the same file, the fetch targets `$REMOTE` rather
-than a submission repository, and the sink is `bash -n`, which parses a local
-file and executes nothing. `scripts/release.sh` is a maintainer tool that no
+**One finding**, `remote-git-execution-unpinned`, on two lines of
+`scripts/release.sh` — the `git fetch` and the `bash -n` further down. It is a
+false positive: the scanner pairs a git acquisition with a later "execution
+sink" in the same file, but the fetch targets `$REMOTE` rather than a
+submission repository and only counts how far behind it the checkout is, and
+the sink parses a local file and executes nothing. `scripts/release.sh` is a maintainer tool that no
 user runs and that the release tarball excludes.
 
 A **new** capability or finding appearing in a diff means the plugin started
