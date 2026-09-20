@@ -6,6 +6,8 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+## [0.1.13] — 2026-09-20
+
 - `install.sh` no longer suggests a default keybinding. It prints the `o.bind`
   line with the chord left for you to fill in, and the command that lists what
   your machine has already taken. Which chords are free is a property of the
