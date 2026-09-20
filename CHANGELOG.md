@@ -6,6 +6,12 @@ the CLI surface, or the entry format bump the major.
 
 ## [Unreleased]
 
+- `install.sh` no longer suggests a default keybinding. It prints the `o.bind`
+  line with the chord left for you to fill in, and the command that lists what
+  your machine has already taken. Which chords are free is a property of the
+  machine rather than of this plugin, and a suggested one that quietly loses to
+  an existing binding makes the plugin look broken.
+
 ## [0.1.12] — 2026-09-15
 
 - A corpus is held to the schema `corpora/README.md` documents before the panel
